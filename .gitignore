@@ -1,0 +1,57 @@
+# =====================================================================
+# VARIABLES DE ENTORNO Y SECRETOS (¡CRÍTICO!)
+# =====================================================================
+.env
+.env.local
+.env.*.local
+*.pem
+
+# =====================================================================
+# BACKEND (Python / FastAPI / RAG)
+# =====================================================================
+# Entornos virtuales
+venv/
+env/
+ENV/
+.venv/
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Bases de datos locales
+*.db
+*.sqlite3
+# Ignorar el contenido de ChromaDB (los vectores pesan mucho y se autogeneran)
+chroma_db/
+chroma_storage/
+
+# Logs de Python
+*.log
+
+# =====================================================================
+# FRONTEND (React / Vite / TypeScript)
+# =====================================================================
+# Dependencias
+node_modules/
+package-lock.json # (Opcional, bórralo de aquí si prefieres versionar las versiones exactas)
+
+# Archivos de construcción (Build)
+dist/
+dist-ssr/
+build/
+
+# Archivos de debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =====================================================================
+# SISTEMA OPERATIVO Y EDITORES
+# =====================================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
