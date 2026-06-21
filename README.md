@@ -45,7 +45,7 @@ src/
 
 1. Clona el repositorio:
    ```bash
-   git clone [https://github.com/EithanMendoza/ecommerce-review-agent.git](https://github.com/EithanMendoza/ecommerce-review-agent.git)
+   git clone https://github.com/EithanMendoza/ecommerce-review-agent.git
    ```
 
 2. Entra al directorio del proyecto:
