@@ -12,7 +12,7 @@ export default function VistaChat() {
   
   // 2. Traemos las herramientas de nuestros dos hooks aislados
   const { historial, cargandoHistorial, errorHistorial } = usarHistorialChat(sesionId);
-  const { mensajes, setMensajes, cargando, enviarPregunta } = usarAgenteRAG(sesionId);
+  const { mensajes, setMensajes, cargando, estadoAgente, enviarPregunta } = usarAgenteRAG(sesionId);
   
   const finalDelChatRef = useRef<HTMLDivElement>(null);
 
@@ -69,10 +69,11 @@ export default function VistaChat() {
               <BurbujaMensaje key={msg.id || `mensaje-${index}`} mensaje={msg} />
             ))}
             
-            {cargando && (
-              <div className="text-sm text-slate-400 italic flex items-center gap-2 pl-4">
-                <div className="w-4 h-4 rounded-full border-2 border-slate-300 border-t-emerald-500 animate-spin"></div>
-                Agente analizando contexto en ChromaDB...
+            {/* Animación de Estado Dinámico del Agente */}
+            {estadoAgente && (
+              <div className="text-sm text-indigo-500 font-medium italic flex items-center gap-3 pl-4 py-2 opacity-80 animate-pulse">
+                <div className="w-4 h-4 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin"></div>
+                {estadoAgente}
               </div>
             )}
             {/* Ancla para el auto-scroll */}
