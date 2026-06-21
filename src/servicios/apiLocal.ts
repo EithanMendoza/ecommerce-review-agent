@@ -107,11 +107,17 @@ export const apiLocal = {
     });
 
     if (!respuesta.ok) {
+      // Interceptamos el 401 (Token expirado o inválido)
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion(); // Borramos el token inservible
+        window.location.href = '/login'; // Forzamos la redirección al login
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
       throw new Error('No se pudieron cargar las sesiones');
     }
 
     const datos = await respuesta.json();
-    return datos.sesiones; // Devuelve la lista que enviaste desde FastAPI
+    return datos.sesiones; 
   },
 
   obtenerHistorialChat: async (sesionId: string): Promise<MensajeHistorial[]> => {
@@ -124,10 +130,38 @@ export const apiLocal = {
     });
 
     if (!respuesta.ok) {
+      // Interceptamos el 401 (Token expirado o inválido)
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion(); // Borramos el token inservible
+        window.location.href = '/login'; // Forzamos la redirección al login
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
       throw new Error('No se pudo cargar el historial del chat');
     }
 
     const datos = await respuesta.json();
     return datos.mensajes; // Devuelve los mensajes de esa sesión específica
-  }
+  },
+
+  // Agrega esto debajo de tus métodos existentes en apiLocal
+  eliminarSesion: async (sesionId: string): Promise<void> => {
+    const token = apiAuth.obtenerToken();
+    const respuesta = await fetch(`${URL_BASE}/api/sesiones/${sesionId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!respuesta.ok) {
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+      throw new Error('No se pudo eliminar la sesión');
+    }
+    
+    // No necesitamos devolver nada, un código 200/204 significa éxito
+  },
 };

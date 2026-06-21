@@ -64,8 +64,9 @@ export default function VistaChat() {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
-            {mensajes.map((msg) => (
-              <BurbujaMensaje key={msg.id} mensaje={msg} />
+            {mensajes.map((msg, index) => (
+              // Si msg.id es undefined o vacío, usa "mensaje-0", "mensaje-1", etc.
+              <BurbujaMensaje key={msg.id || `mensaje-${index}`} mensaje={msg} />
             ))}
             
             {cargando && (

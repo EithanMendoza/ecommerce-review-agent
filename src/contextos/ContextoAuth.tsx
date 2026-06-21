@@ -10,13 +10,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function ProveedorAuth({ children }: { children: ReactNode }) {
-  const [autenticado, setAutenticado] = useState<boolean>(false);
-
-  // Al cargar la app, revisamos si ya hay un token guardado
-  useEffect(() => {
+  // Inicialización perezosa y síncrona
+  const [autenticado, setAutenticado] = useState<boolean>(() => {
+    // React ejecuta esto una sola vez al cargar la página ANTES de renderizar las rutas
     const token = apiAuth.obtenerToken();
-    if (token) setAutenticado(true);
-  }, []);
+    return token !== null; // Devuelve true si hay token, false si no lo hay
+  });
 
   const login = (token: string) => {
     setAutenticado(true);
