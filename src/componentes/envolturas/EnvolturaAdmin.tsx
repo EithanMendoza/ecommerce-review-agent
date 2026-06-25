@@ -6,43 +6,41 @@ import type { SesionChat } from '../../tipos/contratos';
 
 export default function EnvolturaAdmin() {
   const ubicacion = useLocation();
-  const navigate = useNavigate(); // Nuevo hook para forzar redirecciones
-  
+  const navigate = useNavigate();
+
   const [sesiones, setSesiones] = useState<SesionChat[]>([]);
   const [cargandoSesiones, setCargandoSesiones] = useState(true);
 
+  // 🚀 Función aislada para poder llamarla cuando sea necesario
+  const cargarHistorial = async () => {
+    try {
+      const datos = await apiLocal.listarSesiones();
+      setSesiones(datos);
+    } catch (error) {
+      console.error('Error al cargar el historial:', error);
+    } finally {
+      setCargandoSesiones(false);
+    }
+  };
+
+  // ✨ CORRECCIÓN CRÍTICA: Cada vez que la ruta/URL cambie (ubicacion.pathname), 
+  // el Sidebar se actualizará de forma nativa trayendo el título dinámico generado por el Backend.
   useEffect(() => {
-    const cargarHistorial = async () => {
-      try {
-        const datos = await apiLocal.listarSesiones();
-        setSesiones(datos);
-      } catch (error) {
-        console.error('Error al cargar el historial:', error);
-      } finally {
-        setCargandoSesiones(false);
-      }
-    };
-
     cargarHistorial();
-  }, []);
+  }, [ubicacion.pathname]);
 
-  // Nueva función para manejar el borrado
   const manejarEliminacion = async (e: React.MouseEvent, sesionId: string) => {
-    e.preventDefault(); // Evita que al hacer clic en el botón se active el enlace (Link)
-    e.stopPropagation(); 
+    e.preventDefault();
+    e.stopPropagation();
 
     if (!window.confirm('¿Estás seguro de que deseas eliminar este chat? Esta acción es irreversible.')) return;
 
     try {
-      // 1. Llamamos a FastAPI
       await apiLocal.eliminarSesion(sesionId);
-      
-      // 2. Filtramos la sesión borrada de la lista para quitarla de la pantalla al instante
       setSesiones((previas) => previas.filter((s) => s.id !== sesionId));
-      
-      // 3. Caso especial: ¿El usuario borró el chat que está leyendo justo ahora?
+
       if (ubicacion.pathname === `/chat/${sesionId}`) {
-        navigate('/chat'); // Lo mandamos a la pantalla de "Nuevo Chat"
+        navigate('/chat');
       }
     } catch (error) {
       console.error('Error al eliminar:', error);
@@ -61,7 +59,7 @@ export default function EnvolturaAdmin() {
         <div className="h-16 flex items-center px-6 border-b border-slate-200 shrink-0">
           <span className="text-xl font-bold text-indigo-600">Sistema RAG</span>
         </div>
-        
+
         <nav className="px-4 py-4 space-y-1 shrink-0">
           {enlacesPrincipales.map((enlace) => {
             const activo = ubicacion.pathname === enlace.ruta;
@@ -70,11 +68,10 @@ export default function EnvolturaAdmin() {
               <Link
                 key={enlace.ruta}
                 to={enlace.ruta}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                  activo 
-                    ? 'bg-indigo-50 text-indigo-700 font-medium' 
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activo
+                    ? 'bg-indigo-50 text-indigo-700 font-medium'
                     : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 <Icono size={20} />
                 {enlace.texto}
@@ -87,7 +84,7 @@ export default function EnvolturaAdmin() {
           <h3 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Historial
           </h3>
-          
+
           {cargandoSesiones ? (
             <div className="flex justify-center py-4">
               <div className="w-5 h-5 border-2 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
@@ -99,17 +96,15 @@ export default function EnvolturaAdmin() {
               {sesiones.map((sesion) => {
                 const rutaSesion = `/chat/${sesion.id}`;
                 const activo = ubicacion.pathname === rutaSesion;
-                
+
                 return (
-                  // Añadimos 'group' y 'justify-between' para maquetar el botón de borrado
                   <Link
                     key={sesion.id}
                     to={rutaSesion}
-                    className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-all text-sm ${
-                      activo 
-                        ? 'bg-slate-100 text-slate-900 font-medium' 
+                    className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-all text-sm ${activo
+                        ? 'bg-slate-100 text-slate-900 font-medium'
                         : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
                       <MessageSquare size={16} className="shrink-0" />
@@ -118,7 +113,6 @@ export default function EnvolturaAdmin() {
                       </span>
                     </div>
 
-                    {/* Botón de eliminar (Invisible hasta hacer hover) */}
                     <button
                       onClick={(e) => manejarEliminacion(e, sesion.id)}
                       className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all shrink-0"
@@ -138,7 +132,7 @@ export default function EnvolturaAdmin() {
             <UserCircle size={24} />
             <div className="flex flex-col">
               <span className="font-medium">Modo Desarrollo</span>
-              <button 
+              <button
                 onClick={() => {
                   localStorage.removeItem('token_rag');
                   window.location.reload();
@@ -157,7 +151,7 @@ export default function EnvolturaAdmin() {
           <button className="md:hidden text-slate-500 hover:text-slate-700">
             <Menu size={24} />
           </button>
-          
+
           <div className="ml-auto flex items-center gap-4">
             <span className="text-sm font-medium text-slate-500">Motor: Ollama</span>
             <div className="flex items-center gap-2">
