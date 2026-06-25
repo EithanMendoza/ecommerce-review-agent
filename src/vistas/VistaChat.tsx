@@ -10,7 +10,6 @@ export default function VistaChat() {
   const { sesionId } = useParams();
   const navigate = useNavigate();
 
-  // 🚀 Extraemos 'refrescarHistorial' (la función encargada de recargar la lista de chats del hook)
   const { historial, cargandoHistorial, errorHistorial, refrescarHistorial } = usarHistorialChat(sesionId);
   const { mensajes, setMensajes, cargando, estadoAgente, enviarPregunta } = usarAgenteRAG(sesionId);
 
@@ -27,11 +26,8 @@ export default function VistaChat() {
       }));
       setMensajes(historialMapeado);
     } else {
-      setMensajes([{
-        id: 'inicio',
-        rol: 'agente',
-        contenido: '¡Sistemas en línea! He indexado las reseñas en ChromaDB. ¿Qué patrón o producto quieres analizar hoy?'
-      }]);
+      // 🚀 Si es un chat nuevo, dejamos el arreglo vacío para que se dibuje el título de bienvenida grande
+      setMensajes([]);
     }
   }, [historial, cargandoHistorial, setMensajes]);
 
@@ -41,11 +37,7 @@ export default function VistaChat() {
 
   const alEnviarMensaje = (texto: string) => {
     enviarPregunta(texto, (idFinalizado) => {
-      // 1. Cambiamos la URL de forma limpia al terminar el stream para fijar la sesión activa
       navigate(`/chat/${idFinalizado}`, { replace: true });
-
-      // 2. 🚀 Forzamos de inmediato al Sidebar a pedir la lista actualizada al backend
-      // Esto hará que FastAPI devuelva el título autogenerado basado en tu primera pregunta
       if (refrescarHistorial) {
         refrescarHistorial();
       }
@@ -53,31 +45,54 @@ export default function VistaChat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] bg-slate-50/50 rounded-xl border border-slate-200 overflow-hidden shadow-sm relative">
+    <div className="flex flex-col h-[calc(100vh-8rem)] bg-[#181818] rounded-xl border border-neutral-900/80 overflow-hidden shadow-xl relative">
+
       {errorHistorial && (
-        <div className="bg-red-50 text-red-600 p-3 text-sm text-center border-b border-red-200">
+        <div className="bg-red-950/40 text-red-400 p-3 text-sm text-center border-b border-red-900/50">
           {errorHistorial}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Contenedor del scroll del chat */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
         {cargandoHistorial ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-50/80 z-10">
+          <div className="absolute inset-0 flex items-center justify-center bg-[#141414]/90 backdrop-blur-sm z-10">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
-              <span className="text-sm text-slate-500 font-medium">Recuperando memorias...</span>
+              <div className="w-8 h-8 border-4 border-neutral-800 border-t-indigo-500 rounded-full animate-spin"></div>
+              <span className="text-sm text-neutral-400 font-medium">Recuperando memorias...</span>
             </div>
           </div>
-        ) : (
-          <div className="max-w-4xl mx-auto space-y-6">
-            {mensajes.map((msg, index) => (
-              <BurbujaMensaje key={msg.id || `mensaje-${index}`} mensaje={msg} />
-            ))}
+        ) : mensajes.length === 0 ? (
 
-            {estadoAgente && (
-              <div className="text-sm text-indigo-500 font-medium italic flex items-center gap-3 pl-4 py-2 opacity-80 animate-pulse">
-                <div className="w-4 h-4 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin"></div>
-                {estadoAgente}
+          /* 🌟 PANTALLA DE BIENVENIDA ESTILO CHATGPT/GEMINI */
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-300">
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-neutral-100 via-neutral-300 to-neutral-400 bg-clip-text text-transparent tracking-tight mb-3">
+              ¿Cómo te puedo ayudar hoy?
+            </h1>
+            <p className="text-sm text-neutral-500 max-w-md font-medium">
+              El agente esá listo para ayudarte.
+            </p>
+          </div>
+
+        ) : (
+          /* FILAS DE CONVERSACIÓN NORMAL */
+          <div className="max-w-4xl mx-auto space-y-2">
+            {mensajes.map((msg, index) => {
+              const esElUltimo = index === mensajes.length - 1;
+              return (
+                <BurbujaMensaje
+                  key={msg.id || `mensaje-${index}`}
+                  mensaje={msg}
+                  estadoAgente={esElUltimo && msg.rol === 'agente' ? estadoAgente : null}
+                />
+              );
+            })}
+
+            {/* LOGS DE PENSAMIENTO EN TIEMPO REAL DEL AGENTE RAG EN LÍNEA */}
+            {estadoAgente && mensajes[mensajes.length - 1]?.rol === 'usuario' && (
+              <div className="text-sm text-indigo-400 font-medium italic flex items-center gap-3 pl-4 py-2 opacity-90 animate-pulse bg-indigo-950/10 border border-indigo-900/20 rounded-xl max-w-max mt-4">
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-neutral-800 border-t-indigo-400 animate-spin"></div>
+                <span>{estadoAgente}...</span>
               </div>
             )}
             <div ref={finalDelChatRef} />
@@ -85,6 +100,7 @@ export default function VistaChat() {
         )}
       </div>
 
+      {/* FOOTER DEL CHAT (Se mantiene en su posición fija abajo) */}
       <AreaEscritura alEnviar={alEnviarMensaje} cargando={cargando || cargandoHistorial} />
     </div>
   );

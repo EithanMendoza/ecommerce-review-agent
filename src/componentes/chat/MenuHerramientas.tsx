@@ -6,16 +6,14 @@ import ModalHerramientas from '../ui/ModalHerramientas';
 export default function MenuHerramientas() {
   const [abierto, setAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  
-  // Consumimos nuestro nuevo hook
-  const { 
-    cargandoTool, 
-    datosModal, // 2. Extraer los datos del modal
-    cerrarModal, // 3. Extraer la función para cerrarlo
-    diagnostico, reportes, limpiarCache, exportarCsv, metricasResumen 
+
+  const {
+    cargandoTool,
+    datosModal,
+    cerrarModal,
+    diagnostico, reportes, limpiarCache, exportarCsv, metricasResumen
   } = usarHerramientas();
 
-  // Cerramos el menú si el usuario hace clic afuera de él
   useEffect(() => {
     const manejarClicFuera = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -35,59 +33,59 @@ export default function MenuHerramientas() {
   ];
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative select-none" ref={menuRef}>
+      {/* 🛠️ BOTÓN DISPARADOR TOTALMENTE REDONDEADO Y OSCURO */}
       <button
         onClick={() => setAbierto(!abierto)}
         disabled={cargandoTool}
-        className={`p-2.5 rounded-lg transition-colors flex items-center justify-center shrink-0 ${
-          abierto ? 'bg-indigo-100 text-indigo-700' : 'bg-white text-slate-400 hover:bg-slate-100 hover:text-indigo-600'
-        } border border-slate-200 shadow-sm`}
+        className={`p-3 rounded-full transition-all flex items-center justify-center shrink-0 border ${abierto
+            ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/30'
+            : 'bg-[#202020] text-neutral-400 border-neutral-800 hover:bg-[#2a2a2a] hover:text-neutral-200'
+          } shadow-md`}
         title="Herramientas del Sistema"
       >
         {cargandoTool ? (
-          <div className="w-5 h-5 border-2 border-slate-300 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-neutral-700 border-t-indigo-400 rounded-full animate-spin" />
         ) : (
-          <Wrench size={20} />
+          <Wrench size={18} />
         )}
       </button>
 
-      {/* Dropdown Flotante */}
+      {/* 📌 DROPDOWN FLOTANTE ESTILO DARK MODE */}
       {abierto && (
-        <div className="absolute bottom-full left-0 mb-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
-          <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="absolute bottom-full left-0 mb-3 w-60 bg-[#1e1e1e] rounded-xl shadow-xl border border-neutral-800/80 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="px-4 py-2.5 bg-[#161616] border-b border-neutral-800 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
             Admin Tools
           </div>
-          <div className="py-1">
+          <div className="py-1 bg-[#1e1e1e]">
             {itemsMenu.map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => {
                   item.accion();
-                  setAbierto(false); // Cierra el menú tras hacer clic
+                  setAbierto(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors ${
-                  item.peligro 
-                    ? 'text-red-600 hover:bg-red-50' 
-                    : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${item.peligro
+                    ? 'text-red-400 hover:bg-red-950/20'
+                    : 'text-neutral-300 hover:bg-neutral-800/50 hover:text-indigo-400'
+                  }`}
               >
-                <item.icono size={16} />
-                {item.nombre}
+                <item.icono size={16} className={item.peligro ? 'text-red-400' : 'text-neutral-400 group-hover:text-indigo-400'} />
+                <span>{item.nombre}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* 4. Dibujar el Modal si hay datos */}
+      {/* 📊 DIBUJAR EL MODAL SOLO SI ES ESTRICTAMENTE REQUERIDO */}
       {datosModal && (
-        <ModalHerramientas 
-          datos={datosModal} 
-          alCerrar={cerrarModal} 
+        <ModalHerramientas
+          datos={datosModal}
+          alCerrar={cerrarModal}
         />
       )}
-      
+
     </div>
   );
-  
 }
