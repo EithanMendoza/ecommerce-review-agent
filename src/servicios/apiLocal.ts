@@ -164,4 +164,70 @@ export const apiLocal = {
     
     // No necesitamos devolver nada, un código 200/204 significa éxito
   },
+
+  cargarNuevoProducto: async (url: string): Promise<{ estado: string, mensaje: string }> => {
+    const token = apiAuth.obtenerToken();
+    const respuesta = await fetch(`${URL_BASE}/api/producto/cargar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ url })
+    });
+
+    if (!respuesta.ok) {
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada.');
+      }
+      const dataError = await respuesta.json().catch(() => null);
+      throw new Error(dataError?.detail || 'Ocurrió un error al cargar el producto. Verifica la URL.');
+    }
+    
+    return await respuesta.json();
+  },
+
+  descargarCSV: async (): Promise<void> => {
+    const token = apiAuth.obtenerToken();
+    const respuesta = await fetch(`${URL_BASE}/api/herramientas/exportar-csv`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!respuesta.ok) {
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada.');
+      }
+      throw new Error('Hubo un error al generar o descargar el archivo CSV.');
+    }
+
+    // 1. Convertimos la respuesta cruda en un archivo binario (Blob)
+    const blob = await respuesta.blob();
+    
+    // 2. Creamos una URL temporal en la memoria del navegador para este archivo
+    const urlArchivo = window.URL.createObjectURL(blob);
+    
+    // 3. Magia de JS: Creamos un enlace <a> invisible y simulamos un clic
+    const enlace = document.createElement('a');
+    enlace.href = urlArchivo;
+    
+    // Le ponemos un nombre dinámico con la fecha/hora actual
+    const nombreArchivo = `Reporte_Analisis_${new Date().getTime()}.csv`;
+    enlace.setAttribute('download', nombreArchivo);
+    
+    document.body.appendChild(enlace);
+    enlace.click(); // Forzamos la descarga
+    
+    // 4. Limpiamos el DOM y la memoria RAM del navegador
+    enlace.parentNode?.removeChild(enlace);
+    window.URL.revokeObjectURL(urlArchivo);
+  },
+
+  
 };

@@ -38,4 +38,5 @@ export const apiHerramientas = {
   limpiarCache: () => fetchHerramienta('/api/herramientas/limpiar-cache', { method: 'POST' }),
   exportarCsv: () => fetchHerramienta('/api/herramientas/exportar-csv', { method: 'POST' }),
   metricasResumen: () => fetchHerramienta('/api/herramientas/metricas/resumen', { method: 'GET' }),
+  metricasUltima: () => fetchHerramienta('/api/herramientas/metricas/ultima', { method: 'GET' }),
 };

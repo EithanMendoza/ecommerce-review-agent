@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wrench, Activity, FileText, Trash2, Download, BarChart2 } from 'lucide-react';
+import { Wrench, Activity, FileText, Download, BarChart2 } from 'lucide-react';
 import { usarHerramientas } from '../../hooks/usarHerramientas';
 import ModalHerramientas from '../ui/ModalHerramientas';
 
@@ -11,7 +11,7 @@ export default function MenuHerramientas() {
     cargandoTool,
     datosModal,
     cerrarModal,
-    diagnostico, reportes, limpiarCache, exportarCsv, metricasResumen
+    reportes, limpiarCache, exportarCsv, metricasResumen
   } = usarHerramientas();
 
   useEffect(() => {
@@ -24,13 +24,11 @@ export default function MenuHerramientas() {
     return () => document.removeEventListener('mousedown', manejarClicFuera);
   }, []);
 
-  const itemsMenu = [
-    { nombre: 'Diagnóstico', icono: Activity, accion: diagnostico },
-    { nombre: 'Métricas Rápidas', icono: BarChart2, accion: metricasResumen },
-    { nombre: 'Listar Reportes', icono: FileText, accion: reportes },
-    { nombre: 'Exportar CSV', icono: Download, accion: exportarCsv },
-    { nombre: 'Limpiar Caché Chroma', icono: Trash2, accion: limpiarCache, peligro: true },
-  ];
+  const itemsMenu: { nombre: string; icono: React.ElementType; accion: () => void; peligro?: boolean }[] = [
+  { nombre: 'Métricas Rápidas', icono: BarChart2, accion: metricasResumen },
+  { nombre: 'Listar Reportes', icono: FileText, accion: reportes },
+  { nombre: 'Exportar CSV', icono: Download, accion: exportarCsv },
+];
 
   return (
     <div className="relative select-none" ref={menuRef}>
@@ -39,8 +37,8 @@ export default function MenuHerramientas() {
         onClick={() => setAbierto(!abierto)}
         disabled={cargandoTool}
         className={`p-3 rounded-full transition-all flex items-center justify-center shrink-0 border ${abierto
-            ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/30'
-            : 'bg-[#202020] text-neutral-400 border-neutral-800 hover:bg-[#2a2a2a] hover:text-neutral-200'
+          ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/30'
+          : 'bg-[#202020] text-neutral-400 border-neutral-800 hover:bg-[#2a2a2a] hover:text-neutral-200'
           } shadow-md`}
         title="Herramientas del Sistema"
       >
@@ -66,8 +64,8 @@ export default function MenuHerramientas() {
                   setAbierto(false);
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${item.peligro
-                    ? 'text-red-400 hover:bg-red-950/20'
-                    : 'text-neutral-300 hover:bg-neutral-800/50 hover:text-indigo-400'
+                  ? 'text-red-400 hover:bg-red-950/20'
+                  : 'text-neutral-300 hover:bg-neutral-800/50 hover:text-indigo-400'
                   }`}
               >
                 <item.icono size={16} className={item.peligro ? 'text-red-400' : 'text-neutral-400 group-hover:text-indigo-400'} />

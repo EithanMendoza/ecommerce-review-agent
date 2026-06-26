@@ -1,40 +1,53 @@
 import { useState } from 'react';
 import { apiHerramientas } from '../servicios/apiHerramientas';
+import { apiLocal } from '../servicios/apiLocal'; // <-- ¡IMPORTANTE: Agregamos esta importación!
 
 // Definimos el contrato para la información del Modal
 export interface DatosModal {
   titulo: string;
-  contenido: any; 
+  contenido: any;
+  tipo: 'diagnostico' | 'reportes' | 'metricas' | 'default'; // Agregamos 'tipo'
 }
 
 export const usarHerramientas = () => {
   const [cargandoTool, setCargandoTool] = useState(false);
   const [datosModal, setDatosModal] = useState<DatosModal | null>(null);
 
-  const ejecutar = async (nombre: string, accion: () => Promise<any>) => {
+  // Mantenemos tu función original para las demás herramientas
+  const ejecutar = async (nombre: string, accion: () => Promise<any>, tipo: DatosModal['tipo'] = 'default') => {
     setCargandoTool(true);
     try {
       const resultado = await accion();
+      // Abrimos el Modal con los datos y el tipo
+      setDatosModal({ titulo: nombre, contenido: resultado, tipo });
       
-      if (resultado instanceof Blob) {
-        const url = window.URL.createObjectURL(resultado);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `exportacion_${Date.now()}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      } else {
-        // En lugar de alert(), abrimos el Modal con los datos
-        setDatosModal({ titulo: nombre, contenido: resultado });
-      }
     } catch (error) {
       console.error(`Error al ejecutar ${nombre}:`, error);
+      // CORRECCIÓN: Aquí ponemos un mensaje de error fijo, no 'resultado'
       setDatosModal({ 
         titulo: `Error: ${nombre}`, 
-        contenido: { error: 'Hubo un problema de comunicación con el servidor al ejecutar esta herramienta.' } 
+        contenido: { error: 'Hubo un problema de comunicación con el servidor.' },
+        tipo: 'default' 
       });
     } finally {
       setCargandoTool(false);
+    }
+  };
+
+  const manejarExportarCsv = async () => {
+    setCargandoTool(true); // Encendemos el loader
+    try {
+      // Llamamos a la función que creaste en apiLocal (que fuerza la descarga)
+      await apiLocal.descargarCSV();
+    } catch (error: any) {
+      console.error(`Error al exportar CSV:`, error);
+      setDatosModal({ 
+        titulo: `Error: Exportar CSV`, 
+        contenido: { error: error.message || 'No se pudo descargar el archivo CSV.' },
+        tipo: 'default'
+      });
+    } finally {
+      setCargandoTool(false); // Apagamos el loader
     }
   };
 
@@ -44,10 +57,13 @@ export const usarHerramientas = () => {
     cargandoTool,
     datosModal,
     cerrarModal,
-    diagnostico: () => ejecutar('Diagnóstico', apiHerramientas.diagnostico),
+    diagnostico: () => ejecutar('Diagnóstico', apiHerramientas.diagnostico, 'diagnostico'),
     reportes: () => ejecutar('Listar Reportes', apiHerramientas.reportes),
     limpiarCache: () => ejecutar('Limpiar Caché', apiHerramientas.limpiarCache),
-    exportarCsv: () => ejecutar('Exportar CSV', apiHerramientas.exportarCsv),
+    
+    exportarCsv: manejarExportarCsv, 
+    
     metricasResumen: () => ejecutar('Métricas Rápidas', apiHerramientas.metricasResumen),
+    metricasUltima: () => ejecutar('Última Métrica de Rendimiento', apiHerramientas.metricasUltima, 'metricas'),
   };
 };
