@@ -11,7 +11,7 @@ export default function MenuHerramientas() {
     cargandoTool,
     datosModal,
     cerrarModal,
-    reportes, limpiarCache, exportarCsv, metricasResumen
+    reportes, limpiarCache, exportarCsv
   } = usarHerramientas();
 
   useEffect(() => {
@@ -25,7 +25,6 @@ export default function MenuHerramientas() {
   }, []);
 
   const itemsMenu: { nombre: string; icono: React.ElementType; accion: () => void; peligro?: boolean }[] = [
-  { nombre: 'Métricas Rápidas', icono: BarChart2, accion: metricasResumen },
   { nombre: 'Listar Reportes', icono: FileText, accion: reportes },
   { nombre: 'Exportar CSV', icono: Download, accion: exportarCsv },
 ];

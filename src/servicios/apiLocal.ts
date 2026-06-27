@@ -40,14 +40,14 @@ export const apiLocal = {
    */
   enviarMensajeStreaming: async (
     pregunta: string,
-    sesionId: string | undefined, // Recibimos el ID de la sesión (puede ser undefined si es un chat nuevo)
+    sesionId: string | undefined,
     alRecibirChunk: (textoNuevo: string) => void,
-    alCompletar: () => void
+    alCompletar: () => void,
+    signal?: AbortSignal // 🔴 1. AÑADIMOS EL PARÁMETRO AQUÍ
   ) => {
     try {
       const token = apiAuth.obtenerToken();
       
-      // Armamos el payload dinámicamente
       const payload: { mensaje: string; id_sesion?: string } = { mensaje: pregunta };
       if (sesionId) {
         payload.id_sesion = sesionId; 
@@ -60,6 +60,7 @@ export const apiLocal = {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload), 
+        signal: signal // 🔴 2. SE LO PASAMOS A FETCH AQUÍ
       });
 
       if (!respuesta.ok) {
@@ -71,7 +72,6 @@ export const apiLocal = {
       
       if (!respuesta.body) throw new Error('El servidor no devolvió un stream de datos');
 
-      // Interceptamos el flujo de datos crudos antes de que termine la petición
       const lector = respuesta.body.getReader();
       const decodificador = new TextDecoder('utf-8');
       let leyendo = true;
@@ -81,19 +81,23 @@ export const apiLocal = {
         leyendo = !done;
         
         if (value) {
-          // Convertimos los bytes que manda Python a texto legible
           const pedazoTexto = decodificador.decode(value, { stream: true });
           alRecibirChunk(pedazoTexto);
         }
       }
 
-      // Avisamos a la UI que el modelo terminó de generar la respuesta
       alCompletar();
       
-    } catch (error) {
-      console.error('Error en el stream del chat:', error);
-      alRecibirChunk('\n\n[Error: Se perdió la conexión con el motor backend o el token falló]');
-      alCompletar();
+    } catch (error: any) {
+      // 🔴 3. EVITAMOS MOSTRAR ERROR SI FUE CANCELADO POR EL USUARIO
+      if (error.name === 'AbortError' || error.message.includes('aborted')) {
+        console.log('Petición de red cancelada correctamente por el usuario.');
+        // Opcional: No llamamos a alCompletar() aquí porque el hook ya manejó el estado
+      } else {
+        console.error('Error en el stream del chat:', error);
+        alRecibirChunk('\n\n[Error: Se perdió la conexión con el motor backend o el token falló]');
+        alCompletar();
+      }
     }
   },
 

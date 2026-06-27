@@ -60,10 +60,7 @@ export const usarHerramientas = () => {
     diagnostico: () => ejecutar('Diagnóstico', apiHerramientas.diagnostico, 'diagnostico'),
     reportes: () => ejecutar('Listar Reportes', apiHerramientas.reportes),
     limpiarCache: () => ejecutar('Limpiar Caché', apiHerramientas.limpiarCache),
-    
     exportarCsv: manejarExportarCsv, 
-    
-    metricasResumen: () => ejecutar('Métricas Rápidas', apiHerramientas.metricasResumen),
     metricasUltima: () => ejecutar('Última Métrica de Rendimiento', apiHerramientas.metricasUltima, 'metricas'),
   };
 };

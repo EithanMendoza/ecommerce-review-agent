@@ -5,13 +5,14 @@ import AreaEscritura from '../componentes/chat/AreaEscritura';
 import { usarAgenteRAG } from '../hooks/usarAgenteRAG';
 import { usarHistorialChat } from '../hooks/usarHistorialChats';
 import type { Mensaje } from '../tipos/contratos';
+import { Square } from 'lucide-react';
 
 export default function VistaChat() {
   const { sesionId } = useParams();
   const navigate = useNavigate();
 
   const { historial, cargandoHistorial, errorHistorial, refrescarHistorial } = usarHistorialChat(sesionId);
-  const { mensajes, setMensajes, cargando, estadoAgente, enviarPregunta } = usarAgenteRAG(sesionId);
+  const { mensajes, setMensajes, cargando, estadoAgente, enviarPregunta, detenerGeneracion } = usarAgenteRAG(sesionId);
 
   const finalDelChatRef = useRef<HTMLDivElement>(null);
 
@@ -38,23 +39,23 @@ export default function VistaChat() {
   const alEnviarMensaje = (texto: string) => {
     enviarPregunta(texto, (idFinalizado) => {
       navigate(`/chat/${idFinalizado}`, { replace: true });
-      if (refrescarHistorial) {
-        refrescarHistorial();
-      }
+      if (refrescarHistorial) refrescarHistorial();
     });
   };
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] bg-[#181818] rounded-xl border border-neutral-900/80 overflow-hidden shadow-xl relative">
 
+      {/* 🔴 ESTE ES EL ERROR: Lo regresamos a como estaba originalmente */}
       {errorHistorial && (
         <div className="bg-red-950/40 text-red-400 p-3 text-sm text-center border-b border-red-900/50">
           {errorHistorial}
         </div>
       )}
 
-      {/* Contenedor del scroll del chat */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+      {/* 🟢 AQUÍ ES DONDE DEBE IR ocultar-scroll: Contenedor del scroll del chat */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 relative ocultar-scroll">
+        
         {cargandoHistorial ? (
           <div className="absolute inset-0 flex items-center justify-center bg-[#141414]/90 backdrop-blur-sm z-10">
             <div className="flex flex-col items-center gap-3">
@@ -84,6 +85,7 @@ export default function VistaChat() {
                   key={msg.id || `mensaje-${index}`}
                   mensaje={msg}
                   estadoAgente={esElUltimo && msg.rol === 'agente' ? estadoAgente : null}
+                  onReintentar={alEnviarMensaje} 
                 />
               );
             })}
@@ -101,7 +103,11 @@ export default function VistaChat() {
       </div>
 
       {/* FOOTER DEL CHAT (Se mantiene en su posición fija abajo) */}
-      <AreaEscritura alEnviar={alEnviarMensaje} cargando={cargando || cargandoHistorial} />
+      <AreaEscritura 
+        alEnviar={alEnviarMensaje} 
+        cargando={cargando || cargandoHistorial} 
+        onDetener={detenerGeneracion} 
+      />
     </div>
   );
 }

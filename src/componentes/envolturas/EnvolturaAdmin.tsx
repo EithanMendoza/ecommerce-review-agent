@@ -108,7 +108,7 @@ export default function EnvolturaAdmin() {
         </nav>
 
         {/* Historial de Chats Desplazables */}
-        <div className="flex-1 overflow-y-auto px-4 py-2 border-t border-neutral-900/60">
+        <div className="flex-1 overflow-y-auto px-4 py-2 border-t border-neutral-900/60 ocultar-scroll">
           <h3 className="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3 mt-1">
             Historial
           </h3>

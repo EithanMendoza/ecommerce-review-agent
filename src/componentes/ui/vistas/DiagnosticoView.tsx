@@ -11,7 +11,16 @@ export const DiagnosticoView = ({ data }: { data: any }) => {
       .catch(() => setTelemetria(null));
   }, []);
 
-  // Extraemos solo la parte útil del mensaje
+  // 👇 Aquí metemos la función mágica para limpiar los decimales y pasar a segundos
+  const formatearTiempo = (ms: any) => {
+    const tiempoReal = Number(ms); 
+    if (isNaN(tiempoReal)) return { valor: 0, unidad: 'ms' };
+    if (tiempoReal >= 1000) {
+      return { valor: Number((tiempoReal / 1000).toFixed(2)), unidad: 's' };
+    }
+    return { valor: Math.round(tiempoReal), unidad: 'ms' };
+  };
+
   const mensaje = data.mensaje || '';
   const partes = mensaje
     .replace(/^\[DIAGNÓSTICO\]\s*/i, '')
@@ -57,24 +66,41 @@ export const DiagnosticoView = ({ data }: { data: any }) => {
 
         {telemetria ? (
           <div className="grid grid-cols-3 gap-2">
+            
+            {/* 🚀 TTFT ACTUALIZADO */}
             <div className="bg-[#181818] p-3 rounded-lg border border-neutral-800 text-center">
               <Timer size={14} className="text-indigo-400 mx-auto mb-1" />
               <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">TTFT</span>
-              <span className="text-base font-bold text-neutral-200">{telemetria.ttft_ms}</span>
-              <span className="text-[10px] text-neutral-500">ms</span>
+              <span className="text-base font-bold text-neutral-200">
+                {formatearTiempo(telemetria.ttft_ms).valor}
+              </span>
+              <span className="text-[10px] text-neutral-500 ml-1">
+                {formatearTiempo(telemetria.ttft_ms).unidad}
+              </span>
             </div>
+
+            {/* 🚀 LATENCIA ACTUALIZADA */}
             <div className="bg-[#181818] p-3 rounded-lg border border-neutral-800 text-center">
               <Clock size={14} className="text-indigo-400 mx-auto mb-1" />
               <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Latencia</span>
-              <span className="text-base font-bold text-neutral-200">{telemetria.total_latency_ms}</span>
-              <span className="text-[10px] text-neutral-500">ms</span>
+              <span className="text-base font-bold text-neutral-200">
+                {formatearTiempo(telemetria.total_latency_ms).valor}
+              </span>
+              <span className="text-[10px] text-neutral-500 ml-1">
+                {formatearTiempo(telemetria.total_latency_ms).unidad}
+              </span>
             </div>
+
+            {/* 🚀 VELOCIDAD CON SOLO 2 DECIMALES */}
             <div className="bg-[#181818] p-3 rounded-lg border border-neutral-800 text-center">
               <Zap size={14} className="text-emerald-400 mx-auto mb-1" />
               <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Velocidad</span>
-              <span className="text-base font-bold text-emerald-400">{telemetria.tokens_per_second}</span>
-              <span className="text-[10px] text-neutral-500">tok/s</span>
+              <span className="text-base font-bold text-emerald-400">
+                {Number(Number(telemetria.tokens_per_second).toFixed(2))}
+              </span>
+              <span className="text-[10px] text-neutral-500 ml-1">tok/s</span>
             </div>
+
           </div>
         ) : (
           <p className="text-xs text-neutral-600 italic text-center py-2">Sin métricas registradas aún.</p>
