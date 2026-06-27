@@ -37,11 +37,14 @@ export default function VistaChat() {
   }, [mensajes]);
 
   const alEnviarMensaje = (texto: string) => {
-    enviarPregunta(texto, (idFinalizado) => {
+  enviarPregunta(texto, (idFinalizado) => {
+    // Solo navegamos si es un chat nuevo (la URL no tiene sesionId aún)
+    if (!sesionId) {
       navigate(`/chat/${idFinalizado}`, { replace: true });
-      if (refrescarHistorial) refrescarHistorial();
-    });
-  };
+    }
+    if (refrescarHistorial) refrescarHistorial();
+  });
+};
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] bg-[#181818] rounded-xl border border-neutral-900/80 overflow-hidden shadow-xl relative">

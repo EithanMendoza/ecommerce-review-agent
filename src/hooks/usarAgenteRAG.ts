@@ -8,7 +8,7 @@ export const usarAgenteRAG = (sesionId?: string) => {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [cargando, setCargando] = useState(false);
   const [estadoAgente, setEstadoAgente] = useState<string | null>(null);
-  
+
   // NUEVO: Referencia para el controlador de aborto
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -33,7 +33,7 @@ export const usarAgenteRAG = (sesionId?: string) => {
     setEstadoAgente('Evaluando intención...');
 
     const idSesionDestino = sesionId || generarShortUUID();
-    
+
     // Inicializamos un nuevo AbortController para esta petición
     abortControllerRef.current = new AbortController();
 
@@ -58,26 +58,30 @@ export const usarAgenteRAG = (sesionId?: string) => {
           }
           if (textoProcesado) {
             setMensajes((previos) => previos.map((msg) =>
-                msg.id === idAgente ? { ...msg, contenido: msg.contenido + textoProcesado } : msg
+              msg.id === idAgente ? { ...msg, contenido: msg.contenido + textoProcesado } : msg
             ));
           }
         },
         () => {
           setCargando(false);
           setEstadoAgente(null);
-          if (alFinalizarSesion) alFinalizarSesion(idSesionDestino);
+          if (alFinalizarSesion) alFinalizarSesion(idSesionDestino); // ← llama navigate()
         },
         abortControllerRef.current.signal // NUEVO: Pasamos la señal a tu API
       );
     } catch (error: any) {
-      // Manejamos el error si fue causado por nuestra interrupción manual
-      if (error.name === 'AbortError' || error.message.includes('aborted')) {
-        console.log('Generación detenida por el usuario');
+      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        setCargando(false);
+        setEstadoAgente(null);
+        // Opcional: re-sincroniza con la BD después de que el backend guarde
+        setTimeout(() => {
+          if (alFinalizarSesion) alFinalizarSesion(idSesionDestino);
+        }, 800);
       } else {
         console.error('Error en streaming:', error);
+        setCargando(false);
+        setEstadoAgente(null);
       }
-      setCargando(false);
-      setEstadoAgente(null);
     }
   };
 

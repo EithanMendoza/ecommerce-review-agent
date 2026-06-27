@@ -40,19 +40,19 @@ export default function BurbujaMensaje({ mensaje, estadoAgente, onReintentar }: 
               <div className="bg-indigo-600 border border-indigo-500/80 text-white text-sm px-4 py-2.5 rounded-2xl rounded-tr-none shadow-md max-w-[85%] text-left leading-relaxed whitespace-pre-wrap break-words font-medium">
                 {mensaje.contenido}
               </div>
-              
+
               {/* 🛠️ BOTONES DE ACCIÓN (Ocultos por defecto, visibles en hover) */}
               <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <button 
-                  onClick={handleCopiar} 
+                <button
+                  onClick={handleCopiar}
                   className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
                   title="Copiar mensaje"
                 >
                   {copiado ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                 </button>
                 {onReintentar && (
-                  <button 
-                    onClick={() => onReintentar(mensaje.contenido)} 
+                  <button
+                    onClick={() => onReintentar(mensaje.contenido)}
                     className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
                     title="Reintentar mensaje"
                   >
@@ -62,7 +62,7 @@ export default function BurbujaMensaje({ mensaje, estadoAgente, onReintentar }: 
               </div>
             </div>
           ) : (
-            <div className="text-neutral-200 text-sm leading-relaxed whitespace-pre-wrap break-words font-normal w-full pt-1 transition-all duration-300 animate-in fade-in slide-in-from-bottom-1 ease-out">
+            <div className="text-neutral-200 text-sm leading-relaxed whitespace-pre-wrap break-words font-normal w-full pt-1 select-text transition-all duration-300 animate-in fade-in slide-in-from-bottom-1 ease-out">
               {mensaje.contenido}
             </div>
           )}
