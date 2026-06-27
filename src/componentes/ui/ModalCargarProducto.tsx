@@ -83,16 +83,15 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
           <>
             <h2 className="text-xl font-bold text-neutral-200 mb-2">Analizar nuevo producto</h2>
             <p className="text-sm text-neutral-400 mb-6">
-              Pega el enlace de Amazon o Mercado Libre. <br />
-              <span className="font-semibold text-indigo-400">Importante:</span> Asegúrate de que el enlace sea de la página{' '}
-              <span className="italic text-neutral-300">"Ver todas las reseñas"</span> para que la extracción funcione correctamente.
+              Pega la URL del producto que deseas analizar. <br />
+              <span className="font-semibold text-indigo-400">Importante:</span> Asegúrate de que el enlace dirija a la sección de reseñas para que la extracción funcione correctamente.
             </p>
 
             <form onSubmit={manejarEnvio}>
               <div className="mb-4">
                 <input
                   type="url"
-                  placeholder="https://www.amazon.com.mx/product-reviews/..."
+                  placeholder="https://ejemplo.com/producto/resenias"
                   className="w-full px-4 py-3 bg-[#121212] text-neutral-200 rounded-lg border border-neutral-700 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 hover:border-neutral-500 outline-none transition-all placeholder:text-neutral-600 shadow-inner shadow-black/50"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
