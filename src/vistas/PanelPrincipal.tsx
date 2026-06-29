@@ -3,6 +3,7 @@ import { apiHerramientas } from '../../src/servicios/apiHerramientas';
 import { Star, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp } from 'lucide-react';
 
 interface MetricasResumen {
+  producto: string; // 🚨 AGREGADO: Nombre del producto actual
   promedio_estrellas: string;
   distribucion_sentimientos: string;
   reseña_destacada: string;
@@ -63,16 +64,24 @@ export default function PanelPrincipal() {
   const promedio = extraerPromedio(datos.promedio_estrellas);
   const total = extraerTotal(datos.promedio_estrellas);
   const { positivas, negativas } = extraerSentimientos(datos.distribucion_sentimientos);
-  const reseña = extraerReseña(datos.reseña_destacada);
+  const { autor, estrellas: estrellasReseña, texto: textoReseña } = extraerReseña(datos.reseña_destacada);
   const pctPositivo = positivas + negativas > 0 ? Math.round((positivas / (positivas + negativas)) * 100) : 0;
 
   return (
     <div className="space-y-6">
 
-      {/* TÍTULO */}
-      <div>
-        <h1 className="text-xl font-bold text-neutral-200">Panel Principal</h1>
-        <p className="text-sm text-neutral-500 mt-0.5">Resumen del producto analizado</p>
+      {/* TÍTULO Y PRODUCTO DINÁMICO */}
+      <div className="flex flex-col gap-1.5 border-b border-neutral-800/60 pb-5">
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-neutral-200">Panel Principal</h1>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-medium uppercase tracking-wider">
+            <TrendingUp size={11} />
+            En Tiempo Real
+          </div>
+        </div>
+        <p className="text-xs text-neutral-400 leading-normal max-w-4xl">
+          Análisis activo: <span className="text-indigo-400 font-medium">{datos.producto}</span>
+        </p>
       </div>
 
       {/* TARJETAS SUPERIORES */}
@@ -133,23 +142,23 @@ export default function PanelPrincipal() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400">
-              {reseña.autor.charAt(0).toUpperCase()}
+              {autor.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm font-semibold text-neutral-300">{reseña.autor}</span>
+            <span className="text-sm font-semibold text-neutral-300">{autor}</span>
           </div>
           <div className="flex items-center gap-1">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
                 key={i}
                 size={13}
-                className={i < parseInt(reseña.estrellas) ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-700'}
+                className={i < parseInt(estrellasReseña) ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-700'}
               />
             ))}
           </div>
         </div>
 
         <p className={`text-sm text-neutral-400 leading-relaxed ${verCompleta ? '' : 'line-clamp-4'}`}>
-          {reseña.texto}
+          {textoReseña}
         </p>
 
         <button

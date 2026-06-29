@@ -1,11 +1,14 @@
-import { useState, useEffect, useRef } from 'react'; // <-- Agrega useRef aquí
+import { useState, useEffect } from 'react';
 import ModalCargarProducto from '../ui/ModalCargarProducto';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Menu, UserCircle, PlusCircle, MessageSquare, Trash2, Settings, Info } from 'lucide-react'; // <-- Agrega Settings aquí
+import { LayoutDashboard, Menu, PlusCircle, MessageSquare, Trash2, Settings, Info } from 'lucide-react';
 import { apiLocal } from '../../servicios/apiLocal';
 import type { SesionChat } from '../../tipos/contratos';
 import { usarHerramientas } from '../../hooks/usarHerramientas';
 import ModalHerramientas from '../ui/ModalHerramientas';
+import ModalAjustes from '../ui/vistas/ModalAjustes';
+import { apiAuth } from '../../servicios/apiAuth'; // Usamos tu apiAuth original
+import DangerConfirmModal from '../../componentes/chat/DangerConfirmModal';
 
 export default function EnvolturaAdmin() {
   const ubicacion = useLocation();
@@ -14,25 +17,40 @@ export default function EnvolturaAdmin() {
   const [sesiones, setSesiones] = useState<SesionChat[]>([]);
   const [cargandoSesiones, setCargandoSesiones] = useState(true);
 
-  const [mostrarMenuAjustes, setMostrarMenuAjustes] = useState(false);
   const [mostrarModalProducto, setMostrarModalProducto] = useState(false);
+  const [mostrarModalAjustes, setMostrarModalAjustes] = useState(false);
 
-  const { diagnostico, datosModal, cerrarModal, cargandoTool, limpiarCache } = usarHerramientas();
+  const { diagnostico, datosModal, cerrarModal, cargandoTool } = usarHerramientas();
 
-  const menuRef = useRef<HTMLDivElement>(null);
+  // Estado de usuario dinámico que se llenará con el token real
+  const [usuario, setUsuario] = useState({ id: '', nombre: 'Usuario', correo: '' });
 
-  useEffect(() => {
-    function manejarClicFuera(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMostrarMenuAjustes(false);
-      }
+  const [chatAEliminar, setChatAEliminar] = useState<string | null>(null);
+  const [eliminandoChat, setEliminandoChat] = useState(false);
+
+
+
+  // Función para decodificar el JWT de forma nativa sin librerías externas
+  const decodificarTokenNativo = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error("Error al decodificar el token:", e);
+      return null;
     }
-    document.addEventListener("mousedown", manejarClicFuera);
-    return () => document.removeEventListener("mousedown", manejarClicFuera);
-  }, []);
+  };
 
-  // Función cuando el producto termine de cargar
   const onProductoCargado = () => {
+    cargarHistorial();
   };
 
   const cargarHistorial = async () => {
@@ -47,25 +65,61 @@ export default function EnvolturaAdmin() {
   };
 
   useEffect(() => {
+    const token = apiAuth.obtenerToken();
+    if (token) {
+      const payload = decodificarTokenNativo(token);
+      console.log("Contenido del token decodificado:", payload);
+
+      if (payload) {
+        // 🚨 Leemos el campo 'username' que viene del backend
+        const correoDetectado = payload.username || "";
+
+        setUsuario({
+          // El ID sigue siendo el UUID (sub) para que la base de datos no falle al purgar
+          id: payload.sub || '',
+
+          // Guardamos el correo completo
+          correo: correoDetectado,
+
+          // Cortamos el correo para extraer el nombre limpio (ej: "yahirpuc")
+          nombre: correoDetectado
+            ? correoDetectado.split('@')[0]
+            : 'Usuario'
+        });
+      }
+    }
     cargarHistorial();
   }, [ubicacion.pathname]);
 
-  const manejarEliminacion = async (e: React.MouseEvent, sesionId: string) => {
+  const manejarEliminacion = (e: React.MouseEvent, sesionId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este chat? Esta acción es irreversible.')) return;
+    setChatAEliminar(sesionId);
+  };
+
+  const confirmarEliminacionChat = async () => {
+    if (!chatAEliminar) return;
 
     try {
-      await apiLocal.eliminarSesion(sesionId);
-      setSesiones((previas) => previas.filter((s) => s.id !== sesionId));
+      setEliminandoChat(true);
 
-      if (ubicacion.pathname === `/chat/${sesionId}`) {
+      await apiLocal.eliminarSesion(chatAEliminar);
+
+      setSesiones((previas) =>
+        previas.filter((s) => s.id !== chatAEliminar)
+      );
+
+      if (ubicacion.pathname === `/chat/${chatAEliminar}`) {
         navigate('/chat');
       }
+
+      setChatAEliminar(null);
     } catch (error) {
       console.error('Error al eliminar:', error);
       alert('Hubo un problema al intentar borrar el chat.');
+    } finally {
+      setEliminandoChat(false);
     }
   };
 
@@ -77,8 +131,8 @@ export default function EnvolturaAdmin() {
   return (
     <div className="flex h-screen bg-[#121212] text-slate-100 select-none">
 
-      {/* 💻 SIDEBAR IZQUIERDO (DISEÑO MOCKUP PREMIUM DARK) */}
-      <aside className="w-64 bg-[#181818] border-r border-neutral-900 flex flex-col hidden md:flex">
+      {/* 💻 SIDEBAR IZQUIERDO */}
+      <aside className="w-64 bg-[#121212] border-r border-neutral-900 flex flex-col hidden md:flex">
         {/* Header del Sidebar */}
         <div className="h-16 flex items-center px-6 border-b border-neutral-900 shrink-0">
           <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-indigo-600 bg-clip-text text-transparent">
@@ -150,99 +204,69 @@ export default function EnvolturaAdmin() {
                     </button>
                   </Link>
                 );
+
               })}
             </div>
+
           )}
         </div>
 
         {/* Perfil / Footer del Sidebar */}
-        <div className="p-4 border-t border-neutral-900 shrink-0 bg-[#141414] relative" ref={menuRef}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-sm text-neutral-400">
-              <UserCircle size={24} className="text-indigo-400/80" />
-              <div className="flex flex-col">
-                <span className="font-medium text-neutral-300">Modo Desarrollo</span>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('token_rag');
-                    window.location.reload();
-                  }}
-                  className="text-xs text-red-400 hover:text-red-300 text-left transition-colors"
-                >
-                  Cerrar Sesión
-                </button>
+        <div className="p-4 border-t border-neutral-900 shrink-0 bg-[#121212]">
+          <button
+            onClick={() => setMostrarModalAjustes(true)}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-neutral-900/50 hover:bg-neutral-800 border border-neutral-800/40 text-neutral-300 hover:text-neutral-100 transition-all group"
+          >
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[10px] font-bold text-indigo-400">
+                {usuario.nombre.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-medium text-xs text-neutral-300">{usuario.nombre}</span>
+                <span className="text-[10px] text-neutral-500">Configuración del perfil</span>
               </div>
             </div>
 
-            {/* Ícono de Engranaje */}
-            <button
-              onClick={() => setMostrarMenuAjustes(!mostrarMenuAjustes)}
-              className="p-1.5 text-neutral-500 hover:text-neutral-200 hover:bg-neutral-800 rounded-md transition-colors"
-            >
-              <Settings size={18} />
-            </button>
-          </div>
-
-          {/* Menú Desplegable Flotante */}
-          {mostrarMenuAjustes && (
-            <div className="absolute right-4 bottom-16 mb-2 w-56 bg-[#1e1e1e] border border-neutral-800 rounded-lg shadow-xl overflow-hidden z-50">
-              <div className="py-1">
-                {/* Opción 1: Analizar producto */}
-                <button
-                  onClick={() => {
-                    setMostrarMenuAjustes(false);
-                    setMostrarModalProducto(true);
-                  }}
-                  className="w-full text-left px-4 py-3 text-sm text-neutral-300 hover:bg-[#141414] hover:text-indigo-400 transition-colors flex items-center gap-2"
-                >
-                  <PlusCircle size={16} className="text-neutral-400" />
-                  <span>Analizar nuevo producto</span>
-                </button>
-
-                {/* Opción 2: Limpiar Caché (Nueva) */}
-                <button
-                  onClick={() => {
-                    setMostrarMenuAjustes(false);
-                    limpiarCache();
-                  }}
-                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-950/20 transition-colors flex items-center gap-2 border-t border-neutral-800/50"
-                >
-                  <Trash2 size={16} />
-                  <span>Limpiar Caché Chroma</span>
-                </button>
-              </div>
-            </div>
-          )}
+            <Settings size={16} className="text-neutral-500 group-hover:rotate-45 transition-transform duration-300" />
+          </button>
         </div>
+
+
+        {/* Modal de Ajustes Centralizado */}
+        <ModalAjustes
+          isOpen={mostrarModalAjustes}
+          onClose={() => setMostrarModalAjustes(false)}
+          usuarioId={usuario.id}
+          usuarioCorreo={usuario.correo}
+          onAbrirAnalisis={() => setMostrarModalProducto(true)}
+          onHistorialPurged={() => {
+            setSesiones([]); // Vacía la lista en el Sidebar reactivamente
+            setMostrarModalAjustes(false);
+            navigate('/chat');
+          }}
+        />
       </aside>
 
       {/* 🚀 PANEL CENTRAL / CONTENIDO PRINCIPAL */}
       <div className="flex-1 flex flex-col overflow-hidden">
-
         {/* Header Superior del Chat */}
-        {/* Header Superior del Chat */}
-        <header className="h-16 bg-[#181818] border-b border-neutral-900 flex items-center px-6 justify-between shrink-0">
+        <header className="h-16 bg-[#121212] border-b border-neutral-900 flex items-center px-6 justify-between shrink-0">
           <button className="md:hidden text-neutral-400 hover:text-neutral-200 transition-colors">
             <Menu size={24} />
           </button>
 
-          {/* Estado de conexión del Motor Local Ollama y Diagnóstico */}
           <div className="ml-auto flex items-center gap-4">
             <span className="text-sm font-medium text-neutral-500">Motor: <span className="text-neutral-300">Ollama</span></span>
 
             <div className="flex items-center gap-3">
-              {/* Píldora de estado mejorada */}
               <div className="flex items-center gap-2 bg-[#1a1a1a] border border-neutral-800 px-3 py-1.5 rounded-full shadow-inner">
                 <span className="text-[11px] font-bold text-neutral-400 tracking-wider uppercase">API Local</span>
-
-                {/* Indicador con pulso */}
                 <div className="relative flex items-center justify-center w-2 h-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
                 </div>
               </div>
 
-              {/* Botón de Información (Ahora alineado perfectamente) */}
               <button
                 onClick={diagnostico}
                 disabled={cargandoTool}
@@ -259,7 +283,7 @@ export default function EnvolturaAdmin() {
           </div>
         </header>
 
-        {/* Área de Renderizado de la Vista Interna (Outlet) */}
+        {/* Área de Renderizado (Outlet) */}
         <main className="flex-1 overflow-auto p-6 bg-[#121212]">
           <div className="max-w-6xl mx-auto h-full">
             <Outlet />
@@ -273,12 +297,26 @@ export default function EnvolturaAdmin() {
         alCompletar={onProductoCargado}
       />
 
+
       {datosModal && (
         <ModalHerramientas
           datos={datosModal}
           alCerrar={cerrarModal}
         />
       )}
+      <DangerConfirmModal
+        open={chatAEliminar !== null}
+        loading={eliminandoChat}
+        title="Eliminar conversación"
+        description="Este chat será eliminado permanentemente y no podrá recuperarse posteriormente."
+        onCancel={() => setChatAEliminar(null)}
+        onConfirm={confirmarEliminacionChat}
+      />
+
+
+
+
+
     </div>
   );
 }

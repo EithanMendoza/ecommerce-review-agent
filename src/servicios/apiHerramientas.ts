@@ -39,4 +39,17 @@ export const apiHerramientas = {
   exportarCsv: () => fetchHerramienta('/api/herramientas/exportar-csv', { method: 'POST' }),
   metricasResumen: () => fetchHerramienta('/api/herramientas/metricas/resumen', { method: 'GET' }),
   metricasUltima: () => fetchHerramienta('/api/herramientas/metricas/ultima', { method: 'GET' }),
+
+  /**
+   * 🚨 NUEVA: Obtiene el nombre del producto que está actualmente analizado.
+   * Útil para pintar cabeceras o estados rápidos en los paneles.
+   */
+  obtenerProductoActual: () => fetchHerramienta('/api/dashboard/producto-actual', { method: 'GET' }),
+
+  /**
+   * 🚨 NUEVA: Elimina de golpe todo el historial de conversaciones de un perfil específico.
+   * @param usuarioId El identificador único del usuario en sesión (ej: 'yahirpuc')
+   */
+  purgarHistorialPerfil: (usuarioId: string) =>
+    fetchHerramienta(`/api/usuarios/${usuarioId}/historial/purgar`, { method: 'DELETE' }),
 };

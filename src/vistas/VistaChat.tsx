@@ -37,17 +37,17 @@ export default function VistaChat() {
   }, [mensajes]);
 
   const alEnviarMensaje = (texto: string) => {
-  enviarPregunta(texto, (idFinalizado) => {
-    // Solo navegamos si es un chat nuevo (la URL no tiene sesionId aún)
-    if (!sesionId) {
-      navigate(`/chat/${idFinalizado}`, { replace: true });
-    }
-    if (refrescarHistorial) refrescarHistorial();
-  });
-};
+    enviarPregunta(texto, (idFinalizado) => {
+      // Solo navegamos si es un chat nuevo (la URL no tiene sesionId aún)
+      if (!sesionId) {
+        navigate(`/chat/${idFinalizado}`, { replace: true });
+      }
+      if (refrescarHistorial) refrescarHistorial();
+    });
+  };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] bg-[#181818] rounded-xl border border-neutral-900/80 overflow-hidden shadow-xl relative">
+    <div className="flex flex-col h-[calc(100vh-8rem)] bg-[#121212] rounded-xl  overflow-hidden relative">
 
       {/* 🔴 ESTE ES EL ERROR: Lo regresamos a como estaba originalmente */}
       {errorHistorial && (
@@ -58,7 +58,7 @@ export default function VistaChat() {
 
       {/* 🟢 AQUÍ ES DONDE DEBE IR ocultar-scroll: Contenedor del scroll del chat */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 relative ocultar-scroll">
-        
+
         {cargandoHistorial ? (
           <div className="absolute inset-0 flex items-center justify-center bg-[#141414]/90 backdrop-blur-sm z-10">
             <div className="flex flex-col items-center gap-3">
@@ -88,7 +88,7 @@ export default function VistaChat() {
                   key={msg.id || `mensaje-${index}`}
                   mensaje={msg}
                   estadoAgente={esElUltimo && msg.rol === 'agente' ? estadoAgente : null}
-                  onReintentar={alEnviarMensaje} 
+                  onReintentar={alEnviarMensaje}
                 />
               );
             })}
@@ -106,10 +106,10 @@ export default function VistaChat() {
       </div>
 
       {/* FOOTER DEL CHAT (Se mantiene en su posición fija abajo) */}
-      <AreaEscritura 
-        alEnviar={alEnviarMensaje} 
-        cargando={cargando || cargandoHistorial} 
-        onDetener={detenerGeneracion} 
+      <AreaEscritura
+        alEnviar={alEnviarMensaje}
+        cargando={cargando || cargandoHistorial}
+        onDetener={detenerGeneracion}
       />
     </div>
   );

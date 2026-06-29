@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wrench, Activity, FileText, Download, BarChart2 } from 'lucide-react';
+import { Wrench, Activity, FileText, Download, BarChart2, Plus } from 'lucide-react';
 import { usarHerramientas } from '../../hooks/usarHerramientas';
 import ModalHerramientas from '../ui/ModalHerramientas';
 
@@ -25,9 +25,9 @@ export default function MenuHerramientas() {
   }, []);
 
   const itemsMenu: { nombre: string; icono: React.ElementType; accion: () => void; peligro?: boolean }[] = [
-  { nombre: 'Listar Reportes', icono: FileText, accion: reportes },
-  { nombre: 'Exportar CSV', icono: Download, accion: exportarCsv },
-];
+    { nombre: 'Listar Reportes', icono: FileText, accion: reportes },
+    { nombre: 'Exportar CSV', icono: Download, accion: exportarCsv },
+  ];
 
   return (
     <div className="relative select-none" ref={menuRef}>
@@ -44,7 +44,7 @@ export default function MenuHerramientas() {
         {cargandoTool ? (
           <div className="w-5 h-5 border-2 border-neutral-700 border-t-indigo-400 rounded-full animate-spin" />
         ) : (
-          <Wrench size={18} />
+          <Plus size={18} />
         )}
       </button>
 
@@ -52,7 +52,7 @@ export default function MenuHerramientas() {
       {abierto && (
         <div className="absolute bottom-full left-0 mb-3 w-60 bg-[#1e1e1e] rounded-xl shadow-xl border border-neutral-800/80 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
           <div className="px-4 py-2.5 bg-[#161616] border-b border-neutral-800 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
-            Admin Tools
+            Herramientas rápidas
           </div>
           <div className="py-1 bg-[#1e1e1e]">
             {itemsMenu.map((item, idx) => (

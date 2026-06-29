@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Check, X, Plus, Square } from 'lucide-react'; // 🔴 Añadimos 'Square'
+import { Send, Mic, Check, X, Plus, Square, ArrowUp } from 'lucide-react'; // 🔴 Añadimos 'Square'
 import MenuHerramientas from './MenuHerramientas';
 import OndasVoz from './OndasVoz';
 import { usarReconocimientoVoz } from '../../hooks/usarReconocimientoVoz';
@@ -135,13 +135,12 @@ export default function AreaEscritura({ alEnviar, cargando, onDetener }: Props) 
             type="button"
             onClick={manejarEnvioFinal}
             disabled={!texto.trim() || escuchando}
-            className={`p-3 w-[44px] h-[44px] rounded-full transition-all flex items-center justify-center shrink-0 border ${
-              texto.trim() && !escuchando
-                ? 'bg-[#202020] hover:bg-[#2a2a2a] text-emerald-400 border-neutral-700 hover:border-emerald-500/50 shadow-md hover:shadow-emerald-950/30'
-                : 'bg-[#181818] text-neutral-600 border-neutral-800 cursor-not-allowed'
-            }`}
+            className={`p-3 w-[44px] h-[44px] rounded-full transition-all flex items-center justify-center shrink-0 border ${texto.trim() && !escuchando
+              ? 'bg-[#202020] hover:bg-[#2a2a2a] text-emerald-400 border-neutral-700 hover:border-emerald-500/50 shadow-md hover:shadow-emerald-950/30'
+              : 'bg-[#181818] text-neutral-600 border-neutral-800 cursor-not-allowed'
+              }`}
           >
-            <Send size={18} className={texto.trim() && !escuchando ? "text-emerald-400" : "text-neutral-600"} />
+            <ArrowUp size={18} className={texto.trim() && !escuchando ? "text-emerald-400" : "text-neutral-600"} />
           </button>
         )}
       </div>

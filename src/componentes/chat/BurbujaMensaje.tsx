@@ -5,7 +5,7 @@ import type { Mensaje } from '../../tipos/contratos';
 interface Props {
   mensaje: Mensaje;
   estadoAgente?: string | null;
-  onReintentar?: (texto: string) => void; // NUEVO: Prop para reintentar
+  onReintentar?: (texto: string) => void;
 }
 
 export default function BurbujaMensaje({ mensaje, estadoAgente, onReintentar }: Props) {
@@ -15,12 +15,11 @@ export default function BurbujaMensaje({ mensaje, estadoAgente, onReintentar }: 
   const handleCopiar = () => {
     navigator.clipboard.writeText(mensaje.contenido);
     setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000); // Regresa al icono normal tras 2 seg
+    setTimeout(() => setCopiado(false), 2000);
   };
 
   return (
     <div className={`w-full py-4 transition-all flex ${esUsuario ? 'justify-end' : 'justify-start'}`}>
-      {/* Añadimos la clase 'group' aquí para detectar el hover en todo este bloque */}
       <div className="max-w-4xl w-full flex gap-4 px-4 items-start group">
 
         {/* 🤖 AVATAR DEL BOT */}
@@ -30,30 +29,33 @@ export default function BurbujaMensaje({ mensaje, estadoAgente, onReintentar }: 
           </div>
         )}
 
+        {/* Alineación base del contenido */}
         <div className={`flex flex-col space-y-1.5 flex-1 ${esUsuario ? 'items-end' : 'items-start'}`}>
           <p className={`text-[11px] font-bold uppercase tracking-widest ${esUsuario ? 'text-indigo-400' : 'text-emerald-400'}`}>
             {esUsuario ? 'Tú' : 'Agente RAG'}
           </p>
 
           {esUsuario ? (
-            <div className="flex flex-col items-end">
-              <div className="bg-indigo-600 border border-indigo-500/80 text-white text-sm px-4 py-2.5 rounded-2xl rounded-tr-none shadow-md max-w-[85%] text-left leading-relaxed whitespace-pre-wrap break-words font-medium">
+            /* Cambiado a items-start para que los botones se alineen a la izquierda de su contenedor */
+            <div className="flex flex-col items-start max-w-[85%]">
+              <div className="bg-indigo-600 border border-indigo-500/80 text-white text-sm px-4 py-2.5 rounded-2xl rounded-tr-none shadow-md text-left leading-relaxed whitespace-pre-wrap break-words font-medium w-full">
                 {mensaje.contenido}
               </div>
 
-              {/* 🛠️ BOTONES DE ACCIÓN (Ocultos por defecto, visibles en hover) */}
-              <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {/* 🛠️ BOTONES DE ACCIÓN (Alineados a la izquierda para evitar saltos de texto) */}
+              <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pl-1">
                 <button
                   onClick={handleCopiar}
-                  className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                  className="flex items-center justify-center w-4 h-4 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
                   title="Copiar mensaje"
                 >
+                  {/* El contenedor mantiene el tamaño exacto, previniendo saltos de layout */}
                   {copiado ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                 </button>
                 {onReintentar && (
                   <button
                     onClick={() => onReintentar(mensaje.contenido)}
-                    className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                    className="flex items-center justify-center w-4 h-4 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
                     title="Reintentar mensaje"
                   >
                     <RotateCcw size={14} />
@@ -67,15 +69,16 @@ export default function BurbujaMensaje({ mensaje, estadoAgente, onReintentar }: 
             </div>
           )}
 
-          {/* ESTADO AGENTE ... (Se mantiene igual) */}
+          {/* ESTADO AGENTE CON PUNTOS ANIMADOS */}
           {!esUsuario && estadoAgente && (
             <div className="mt-4 w-full flex flex-col gap-2 p-3 bg-[#202020]/60 border border-neutral-800 rounded-xl max-w-2xl animate-in fade-in slide-in-from-bottom-1 duration-200">
               <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                 <Loader2 size={13} className="animate-spin text-indigo-400" />
                 <span>Procesando consulta RAG</span>
               </div>
-              <p className="text-xs text-neutral-500 italic pl-5">
-                {estadoAgente}...
+              <p className="text-xs text-neutral-500 italic pl-5 flex items-center gap-0.5">
+                {estadoAgente}
+
               </p>
             </div>
           )}
