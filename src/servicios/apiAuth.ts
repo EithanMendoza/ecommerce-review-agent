@@ -27,6 +27,30 @@ export const apiAuth = {
     return datos;
   },
 
+  // 🚀 NUEVO: Función para registrar usuario
+  registrarUsuario: async (credenciales: CredencialesLogin) => {
+    // NOTA: Asegúrate de que la ruta coincida con tu endpoint en FastAPI. 
+    // Si tu router de autenticación tiene un prefijo, podría ser /api/auth/registro
+    const respuesta = await fetch(`${URL_BASE}/registro`, { 
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        correo: credenciales.correo,
+        contrasena: credenciales.contrasena
+      }),
+    });
+
+    if (!respuesta.ok) {
+      // Intentamos extraer el mensaje de error del backend (FastAPI envía {"detail": "..."})
+      const errorData = await respuesta.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Error al registrar el usuario. El correo podría ya estar en uso.');
+    }
+
+    return respuesta.json();
+  },
+
   cerrarSesion: () => {
     localStorage.removeItem('token_rag');
   },

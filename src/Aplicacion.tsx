@@ -4,6 +4,8 @@ import RutaProtegida from './componentes/envolturas/RutaProtegida';
 import PanelPrincipal from './vistas/PanelPrincipal';
 import VistaChat from './vistas/VistaChat';
 import VistaLogin from './vistas/VistaLogin';
+// 🚀 Importamos la nueva vista de registro
+import VistaRegistro from './vistas/VistaRegistro'; 
 import EnvolturaAdmin from './componentes/envolturas/EnvolturaAdmin';
 
 export default function Aplicacion() {
@@ -12,6 +14,9 @@ export default function Aplicacion() {
       <Routes>
         {/* Rutas Públicas */}
         <Route path="/login" element={<VistaLogin />} />
+        
+        {/* 🚀 Agregamos la ruta para el registro */}
+        <Route path="/registro" element={<VistaRegistro />} />
 
         {/* Rutas Privadas */}
         <Route element={<RutaProtegida />}>
@@ -25,6 +30,9 @@ export default function Aplicacion() {
             <Route path="/chat/:sesionId" element={<VistaChat key="existente" />} />
           </Route>
         </Route>
+        
+        {/* 🚀 Ruta de respaldo: Si escriben una URL que no existe, los manda al login */}
+        <Route path="*" element={<VistaLogin />} />
       </Routes>
     </ProveedorAuth>
   );
