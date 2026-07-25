@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { apiAuth } from '../servicios/apiAuth';
 
 export default function VistaRegistro() {
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
 
@@ -21,12 +23,12 @@ export default function VistaRegistro() {
 
     try {
       // FLUJO DE REGISTRO
-      await apiAuth.registrarUsuario({ correo, contrasena });
+      await apiAuth.registrarUsuario({ nombre, apellido, correo, contrasena });
       setMensajeExito('Usuario creado exitosamente. Ya puedes iniciar sesión.');
       setContrasena(''); // Limpiamos el password por seguridad
       
       // Opcional: Redirigir automáticamente al login después de 2 segundos
-      // setTimeout(() => navigate('/login'), 2000);
+      setTimeout(() => navigate('/login'), 2000);
       
     } catch (err: any) {
       setError(err.message || 'Error al crear la cuenta.');
@@ -64,6 +66,46 @@ export default function VistaRegistro() {
 
         {/* Formulario */}
         <form onSubmit={manejarEnvio} className="space-y-4">
+          
+          {/* Campo Nombre */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-neutral-400">Nombre</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                <User size={18} />
+              </div>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                required
+                disabled={cargando}
+                className="w-full pl-10 pr-4 py-2 bg-[#202020] border border-neutral-800 text-neutral-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all"
+                placeholder="Tu nombre"
+              />
+            </div>
+          </div>
+
+          {/* Campo Apellido */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-neutral-400">Apellido</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                <User size={18} />
+              </div>
+              <input
+                type="text"
+                value={apellido}
+                onChange={(e) => setApellido(e.target.value)}
+                required
+                disabled={cargando}
+                className="w-full pl-10 pr-4 py-2 bg-[#202020] border border-neutral-800 text-neutral-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all"
+                placeholder="Tu apellido"
+              />
+            </div>
+          </div>
+
+          {/* Campo Correo Electrónico */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-neutral-400">Correo Electrónico</label>
             <div className="relative">
@@ -82,6 +124,7 @@ export default function VistaRegistro() {
             </div>
           </div>
 
+          {/* Campo Contraseña */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-neutral-400">Contraseña</label>
             <div className="relative">
@@ -102,7 +145,7 @@ export default function VistaRegistro() {
 
           <button
             type="submit"
-            disabled={cargando || !correo || !contrasena}
+            disabled={cargando || !nombre || !apellido || !correo || !contrasena}
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-all disabled:opacity-40 mt-6 shadow-md shadow-indigo-950/40"
           >
             {cargando ? (
@@ -120,7 +163,7 @@ export default function VistaRegistro() {
         <div className="text-center mt-4">
           <button
             type="button"
-            onClick={() => navigate('/login')} // Asegúrate de que la ruta de tu login sea esta en tu Aplicacion.tsx
+            onClick={() => navigate('/login')}
             className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
           >
             ¿Ya tienes cuenta? Inicia sesión

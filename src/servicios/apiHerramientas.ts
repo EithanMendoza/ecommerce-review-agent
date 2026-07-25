@@ -33,21 +33,28 @@ const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) =>
 };
 
 export const apiHerramientas = {
-  diagnostico: () => fetchHerramienta('/api/herramientas/diagnostico', { method: 'GET' }),
-  reportes: () => fetchHerramienta('/api/herramientas/reportes', { method: 'GET' }),
-  limpiarCache: () => fetchHerramienta('/api/herramientas/limpiar-cache', { method: 'POST' }),
-  exportarCsv: () => fetchHerramienta('/api/herramientas/exportar-csv', { method: 'POST' }),
-  metricasResumen: () => fetchHerramienta('/api/herramientas/metricas/resumen', { method: 'GET' }),
-  metricasUltima: () => fetchHerramienta('/api/herramientas/metricas/ultima', { method: 'GET' }),
+  // 🚀 ACTUALIZADO: Rutas corregidas hacia /api/metricas/
+  diagnostico: () => fetchHerramienta('/api/metricas/diagnostico', { method: 'GET' }),
+  
+  // 🚀 Mantenemos los comentados en el backend, apuntando a las rutas correctas para el futuro
+  reportes: () => fetchHerramienta('/api/metricas/reportes', { method: 'GET' }),
+  limpiarCache: () => fetchHerramienta('/api/metricas/limpiar-cache', { method: 'POST' }),
+  
+  // 🚀 NUEVO: Requieren el ASIN como parámetro en la URL
+  exportarCsv: (asin: string) => fetchHerramienta(`/api/metricas/exportar-csv/${asin}`, { method: 'POST' }),
+  metricasResumen: (asin: string) => fetchHerramienta(`/api/metricas/resumen/${asin}`, { method: 'GET' }),
+  
+  // 🚀 ACTUALIZADO: Ruta corregida
+  metricasUltima: () => fetchHerramienta('/api/metricas/ultima', { method: 'GET' }),
 
   /**
-   * 🚨 NUEVA: Obtiene el nombre del producto que está actualmente analizado.
+   * Obtiene el nombre del producto que está actualmente analizado.
    * Útil para pintar cabeceras o estados rápidos en los paneles.
    */
   obtenerProductoActual: () => fetchHerramienta('/api/dashboard/producto-actual', { method: 'GET' }),
 
   /**
-   * 🚨 NUEVA: Elimina de golpe todo el historial de conversaciones de un perfil específico.
+   * Elimina de golpe todo el historial de conversaciones de un perfil específico.
    * @param usuarioId El identificador único del usuario en sesión (ej: 'yahirpuc')
    */
   purgarHistorialPerfil: (usuarioId: string) =>

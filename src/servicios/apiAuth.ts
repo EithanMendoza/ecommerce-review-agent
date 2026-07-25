@@ -1,4 +1,9 @@
-import type { CredencialesLogin, RespuestaToken } from '../tipos/auth';
+import type { 
+  CredencialesLogin, 
+  DatosRegistro, 
+  RespuestaToken, 
+  RespuestaRegistro 
+} from '../tipos/auth';
 
 const URL_BASE = 'http://localhost:8000';
 
@@ -27,19 +32,14 @@ export const apiAuth = {
     return datos;
   },
 
-  // 🚀 NUEVO: Función para registrar usuario
-  registrarUsuario: async (credenciales: CredencialesLogin) => {
-    // NOTA: Asegúrate de que la ruta coincida con tu endpoint en FastAPI. 
-    // Si tu router de autenticación tiene un prefijo, podría ser /api/auth/registro
-    const respuesta = await fetch(`${URL_BASE}/registro`, { 
+  registrarUsuario: async (datosRegistro: DatosRegistro): Promise<RespuestaRegistro> => {
+    const respuesta = await fetch(`${URL_BASE}/api/auth/registro`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        correo: credenciales.correo,
-        contrasena: credenciales.contrasena
-      }),
+      // Pasamos el objeto completo que ya incluye nombre, apellido, correo y contrasena
+      body: JSON.stringify(datosRegistro),
     });
 
     if (!respuesta.ok) {
