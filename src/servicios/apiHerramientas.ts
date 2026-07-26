@@ -49,6 +49,24 @@ export const apiHerramientas = {
   // 🛍️ Información de contexto sobre el Producto actual
   obtenerProductoActual: () => fetchHerramienta('/api/dashboard/producto-actual', { method: 'GET' }),
 
+  // 📦 PRODUCTOS Y SESIONES AUTENTICADAS (Agregados para resolver "Chat nuevo")
+  listarProductos: () => fetchHerramienta('/api/productos', { method: 'GET' }),
+
+  // 🟢 CORRECCIÓN CLAVE: Ahora llamamos al endpoint de sesiones dedicado que SÍ genera el UUID
+  crearSesion: (asin: string) =>
+    fetchHerramienta('/api/sesiones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asin })
+    }).then(res => ({ id: res.id || res.sesion_id })),
+
+  iniciarScraping: (urlOAsin: string) =>
+    fetchHerramienta('/api/scraper/iniciar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url_o_asin: urlOAsin, marketplace: 'com.mx' })
+    }),
+
   /**
    * Elimina de golpe todo el historial de conversaciones de un perfil específico.
    * @param usuarioId El identificador único del usuario en sesión

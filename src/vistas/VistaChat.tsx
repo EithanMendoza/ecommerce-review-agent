@@ -4,7 +4,7 @@ import BurbujaMensaje from '../componentes/chat/BurbujaMensaje';
 import AreaEscritura from '../componentes/chat/AreaEscritura';
 import { usarAgenteRAG } from '../hooks/usarAgenteRAG';
 import { usarHistorialChat } from '../hooks/usarHistorialChats';
-import { apiLocal } from '../servicios/apiLocal';
+import { apiHerramientas } from '../servicios/apiHerramientas';
 import type { Mensaje, ProductoAnalizado } from '../tipos/contratos';
 import { Square, ChevronDown, Package } from 'lucide-react';
 
@@ -45,18 +45,24 @@ export default function VistaChat() {
   const mensajeInicialProcesadoPara = useRef<string | null>(null);
 
   // 🆕 Solo cuando estamos en "Chat nuevo" (sin sesionId en la URL) cargamos los productos analizados
+  // 🆕 Cambiado a apiHerramientas para que mande el Token e identifique al usuario
   useEffect(() => {
     if (sesionId) return;
 
     let activo = true;
     setCargandoProductos(true);
 
-    apiLocal.listarProductos()
-      .then((lista) => {
+    apiHerramientas.listarProductos() // 🌟 ANTES: apiLocal.listarProductos()
+      .then((res) => {
         if (!activo) return;
+
+        // Dependiendo de cómo devuelva los datos tu endpoint, si es un array directo 
+        // o un objeto {"productos": [...]}, asegúrate de asignar el array:
+        const lista = Array.isArray(res) ? res : (res.productos || []);
+
         setProductos(lista);
         if (lista.length > 0) {
-          setAsinSeleccionado(lista[0].asin); // 🚀 Preseleccionamos el último producto analizado
+          setAsinSeleccionado(lista[0].asin); // Preseleccionamos el último analizado
         }
       })
       .catch((error) => {
@@ -89,35 +95,43 @@ export default function VistaChat() {
     finalDelChatRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
 
+  //  Si llegamos aquí con un mensaje pendiente (viene del selector de "Chat nuevo"),
+  // lo enviamos automáticamente en cuanto el historial de esa sesión ya cargó.
   // 🆕 Si llegamos aquí con un mensaje pendiente (viene del selector de "Chat nuevo"),
   // lo enviamos automáticamente en cuanto el historial de esa sesión ya cargó.
   useEffect(() => {
     const mensajePendiente = (location.state as { mensajeInicial?: string } | null)?.mensajeInicial;
 
-    if (!sesionId || !mensajePendiente || cargandoHistorial) return;
+    // 🚀 CORRECCIÓN CLAVE: Agregamos la validación contra la palabra "undefined"
+    if (!sesionId || sesionId === 'undefined' || !mensajePendiente || cargandoHistorial) return;
     if (mensajeInicialProcesadoPara.current === sesionId) return; // ya se envió para esta sesión
 
     mensajeInicialProcesadoPara.current = sesionId;
+
+    // 🚀 CORRECCIÓN CLAVE: Limpiamos el state de navegación ANTES de enviar la pregunta.
+    // Esto evita que mutaciones simultáneas de la ruta interrumpan el stream de renderizado.
+    navigate(location.pathname, { replace: true, state: {} });
+
     enviarPregunta(mensajePendiente, () => {
       if (refrescarHistorial) refrescarHistorial();
     });
 
-    // Limpiamos el state de navegación para que un refresh de la página no reenvíe el mensaje
-    navigate(location.pathname, { replace: true, state: {} });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sesionId, cargandoHistorial]);
+  }, [sesionId, cargandoHistorial, location.state, navigate, refrescarHistorial]);
 
   const alEnviarMensaje = async (texto: string) => {
-    // 🛑 EL INTERCEPTOR: Si no hay sesión en la URL, estamos en "Chat nuevo"
-    if (!sesionId) {
+    // 🛑 EL INTERCEPTOR: Si no hay sesión válida en la URL, estamos en "Chat nuevo"
+    if (!sesionId || sesionId === 'undefined') {
 
-      // 🟢 Ya existe al menos un producto analizado: creamos una sesión nueva para retomarlo
+      // 🟢 CASO A: Se seleccionó un producto analizado -> creamos la sesión en SQLite
       if (asinSeleccionado) {
         setErrorCreandoSesion(null);
         setSelectorAbierto(false);
         setCreandoSesion(true);
         try {
-          const nuevaSesion = await apiLocal.ccrearSesion(asinSeleccionado);
+          // 🚀 Crea la sesión autenticada vinculada al producto y usuario
+          const nuevaSesion = await apiHerramientas.crearSesion(asinSeleccionado);
+
+          // Redirigimos al chat con el ID legítimo
           navigate(`/chat/${nuevaSesion.id}`, { state: { mensajeInicial: texto, asin: asinSeleccionado } });
         } catch (error) {
           console.error('No se pudo crear la sesión para el producto seleccionado:', error);
@@ -125,10 +139,10 @@ export default function VistaChat() {
         } finally {
           setCreandoSesion(false);
         }
-        return;
+        return; // 👈 CORRECCIÓN CLAVE: Corta la ejecución para no llamar a enviarPregunta
       }
 
-      // 🛑 No hay ningún producto analizado todavía: simulamos la respuesta del agente
+      // 🛑 CASO B: No hay ningún producto seleccionado -> Simulación local decorativa
       const mensajeUsuario: Mensaje = {
         id: `temp-usr-${Date.now()}`,
         rol: 'usuario',
@@ -140,15 +154,15 @@ export default function VistaChat() {
         const mensajeAgente: Mensaje = {
           id: `temp-agt-${Date.now()}`,
           rol: 'agente',
-          contenido: "¡Hola! Para que pueda ayudarte a responder preguntas, primero necesito que me des un producto para analizar. Por favor, ve al **Panel Principal** o abre la configuración de tu perfil para cargar un enlace de Amazon. 📦"
+          contenido: "¡Hola! Para que pueda ayudarte a responder preguntas, primero selecciona uno de tus productos analizados en el menú desplegable de arriba o carga un nuevo enlace en el **Panel Principal**. 📦"
         };
         setMensajes(prev => [...prev, mensajeAgente]);
       }, 600);
 
-      return; // Terminamos aquí para no molestar a Ollama ni al backend
+      return; // 👈 CORRECCIÓN CLAVE: Detiene la función sin contactar al backend
     }
 
-    // 🟢 FLUJO NORMAL: Si hay sesión, dejamos que el Agente RAG haga su magia.
+    // 🟢 FLUJO NORMAL: Si hay una sesión activa legítima, enviamos la consulta al Agente RAG.
     enviarPregunta(texto, () => {
       if (refrescarHistorial) refrescarHistorial();
     });
@@ -226,11 +240,10 @@ export default function VistaChat() {
                               setAsinSeleccionado(producto.asin);
                               setSelectorAbierto(false);
                             }}
-                            className={`w-full text-center text-sm px-4 py-2.5 truncate transition-colors ${
-                              seleccionado
-                                ? 'bg-indigo-500/10 text-indigo-300 font-medium'
-                                : 'text-neutral-300 hover:bg-neutral-800/70'
-                            }`}
+                            className={`w-full text-center text-sm px-4 py-2.5 truncate transition-colors ${seleccionado
+                              ? 'bg-indigo-500/10 text-indigo-300 font-medium'
+                              : 'text-neutral-300 hover:bg-neutral-800/70'
+                              }`}
                           >
                             {producto.nombre || producto.asin}
                           </button>
@@ -246,8 +259,8 @@ export default function VistaChat() {
               {creandoSesion
                 ? 'Preparando el chat para ese producto...'
                 : !sesionId && productos.length > 0
-                ? 'Escribe tu pregunta abajo para empezar con el producto seleccionado.'
-                : 'El agente está listo para ayudarte.'}
+                  ? 'Escribe tu pregunta abajo para empezar con el producto seleccionado.'
+                  : 'El agente está listo para ayudarte.'}
             </p>
           </div>
 

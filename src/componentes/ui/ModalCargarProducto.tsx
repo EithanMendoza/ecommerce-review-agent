@@ -222,7 +222,7 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
                 </div>
 
                 <p className="text-base text-neutral-400 max-w-lg leading-relaxed bg-neutral-900/60 p-5 border border-neutral-800 rounded-2xl">
-                  Por favor, mantén esta ventana abierta. Nuestro sistema abrirá una ventana del navegador en segundo plano en el servidor para recopilar, ordenar y guardar los comentarios necesarios. Esto tomará solo un momento.
+                  Por favor, mantén esta ventana abierta. Nuestro sistema recopilará, ordenará y guardará los comentarios necesarios. Esto tomará solo un momento.
                 </p>
               </div>
             )}

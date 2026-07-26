@@ -7,8 +7,7 @@ export const usarHistorialChat = (sesionId?: string) => {
   const [cargandoHistorial, setCargandoHistorial] = useState<boolean>(false);
   const [errorHistorial, setErrorHistorial] = useState<string | null>(null);
 
-  // 🆕 ASIN del producto de esta sesión (lo manda historial.py, lo necesitamos
-  // para saber sobre qué producto exportar el CSV desde las Herramientas rápidas)
+  // 🆕 ASIN y Título del producto de esta sesión
   const [asinSesion, setAsinSesion] = useState<string | undefined>(undefined);
   const [tituloSesion, setTituloSesion] = useState<string | undefined>(undefined);
 
@@ -21,37 +20,57 @@ export const usarHistorialChat = (sesionId?: string) => {
   };
 
   useEffect(() => {
-    // Si no hay sesionId en la URL, significa que es la ruta "/chat" (Chat Nuevo).
-    // Limpiamos el estado inmediatamente y no hacemos peticiones.
-    if (!sesionId) {
+    // 🚀 BLINDAJE CLAVE: Si no hay sesionId o su valor en texto es "undefined"
+    // (común al cargar rutas como /chat/undefined), reseteamos estado y NO disparamos peticiones.
+    if (!sesionId || sesionId === 'undefined') {
       setHistorial([]);
       setErrorHistorial(null);
       setAsinSesion(undefined);
       setTituloSesion(undefined);
+      setCargandoHistorial(false);
       return;
     }
 
-    // Si hay un sesionId, disparamos la petición a FastAPI
+    let cancelado = false;
+
+    // Si hay un sesionId válido, disparamos la petición a FastAPI
     const recuperarMensajes = async () => {
       setCargandoHistorial(true);
       setErrorHistorial(null);
 
       try {
         const respuesta = await apiLocal.obtenerHistorialChat(sesionId);
-        setHistorial(respuesta.mensajes);
-        setAsinSesion(respuesta.asin);
-        setTituloSesion(respuesta.titulo);
+
+        if (!cancelado) {
+          setHistorial(respuesta.mensajes || []);
+          setAsinSesion(respuesta.asin);
+          setTituloSesion(respuesta.titulo);
+        }
       } catch (error) {
-        console.error('Fallo al recuperar los mensajes:', error);
-        setErrorHistorial('No se pudo cargar la conversación anterior. Intenta de nuevo.');
+        if (!cancelado) {
+          console.error('Fallo al recuperar los mensajes:', error);
+          setErrorHistorial('No se pudo cargar la conversación anterior. Intenta de nuevo.');
+        }
       } finally {
-        setCargandoHistorial(false);
+        if (!cancelado) {
+          setCargandoHistorial(false);
+        }
       }
     };
 
     recuperarMensajes();
-  }, [sesionId, trigger]); // 🚀 Escucha cambios en la URL (sesionId) y en el disparador manual (trigger)
 
-  // Exportamos las variables junto con la nueva función para TypeScript
-  return { historial, cargandoHistorial, errorHistorial, refrescarHistorial, asinSesion, tituloSesion };
+    return () => {
+      cancelado = true;
+    };
+  }, [sesionId, trigger]); // Escucha cambios en la URL (sesionId) y en el disparador manual (trigger)
+
+  return {
+    historial,
+    cargandoHistorial,
+    errorHistorial,
+    refrescarHistorial,
+    asinSesion,
+    tituloSesion
+  };
 };

@@ -80,7 +80,7 @@ export default function ModalAjustes({
                     titulo: '¡Historial Eliminado con Éxito!',
                     descripcion: res.message || 'Todas tus conversaciones han sido borradas de manera permanente de nuestros servidores.'
                 });
-                onHistorialPurged();
+                // ⚠️ SE ELIMINÓ onHistorialPurged() DE AQUÍ PARA EVITAR EL CIERRE BRUSCO DEL MODAL
             }
 
             if (confirmacion.accion === 'cache') {
@@ -88,8 +88,8 @@ export default function ModalAjustes({
                 setNotificacion({
                     abierta: true,
                     tipo: 'exito',
-                    titulo: '¡Caché Optimizada con Éxito!',
-                    descripcion: res.message || 'Los archivos temporales de optimización se han limpiado correctamente.'
+                    titulo: '¡Base de Datos eliminada con Éxito!',
+                    descripcion: res.message || 'Los datos se han limpiado correctamente.'
                 });
             }
         } catch {
@@ -264,9 +264,9 @@ export default function ModalAjustes({
                                             <div className="flex gap-4">
                                                 <Trash2 className="text-red-400 shrink-0 mt-1" size={22} />
                                                 <div className="space-y-1">
-                                                    <h4 className="text-base font-bold text-neutral-100">Optimizar Memoria del Sistema</h4>
+                                                    <h4 className="text-base font-bold text-neutral-100">Borrar todos los datos</h4>
                                                     <p className="text-sm text-neutral-400 leading-relaxed">
-                                                        Borra archivos temporales de velocidad guardados en la plataforma. Es de gran utilidad si notas datos desactualizados o quieres refrescar el rendimiento del asistente.
+                                                        Borra todos los datos del sistema. Es de gran utilidad si notas datos desactualizados o quieres refrescar el rendimiento del asistente.
                                                     </p>
                                                 </div>
                                             </div>
@@ -275,12 +275,12 @@ export default function ModalAjustes({
                                                 onClick={() => setConfirmacion({
                                                     abierta: true,
                                                     accion: 'cache',
-                                                    titulo: '¿Deseas optimizar la memoria del sistema?',
+                                                    titulo: '¿Deseas borrar todos los datos del sistema?',
                                                     descripcion: 'Se eliminarán los archivos y configuraciones temporales de optimización rápida. Tus datos importantes no se verán alterados.'
                                                 })}
                                                 className="px-4 py-2.5 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs font-bold rounded-xl transition shrink-0"
                                             >
-                                                Optimizar Sistema
+                                                Borrar Datos
                                             </button>
                                         </div>
                                     </div>
