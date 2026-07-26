@@ -43,12 +43,20 @@ export const usarAgenteRAG = (sesionId?: string) => {
 
       if (reader) {
         let textoCompleto = '';
+        let esPrimerChunk = true; // 🆕 Agregamos una bandera
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           const pedazoTexto = decoder.decode(value, { stream: true });
           textoCompleto += pedazoTexto;
+
+          // 🆕 Si es el primer pedazo de texto, ocultamos el cuadro de estado
+          if (esPrimerChunk) {
+            setEstadoAgente(null); 
+            esPrimerChunk = false;
+          }
 
           // Actualizamos solo el último mensaje en tiempo real
           setMensajes((prev) => {
