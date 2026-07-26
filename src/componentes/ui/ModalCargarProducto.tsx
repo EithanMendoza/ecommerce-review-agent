@@ -22,11 +22,11 @@ interface ModalCargarProductoProps {
 
 // Fases dinámicas que cambian con su respectivo icono central
 const PASOS_CARGA = [
-  { texto: "Abriendo una ventana del navegador de forma segura...", icono: <Network className="text-indigo-400 animate-pulse" size={24} /> },
-  { texto: "Analizando el enlace obligatorio proporcionado...", icono: <Search className="text-indigo-400 animate-pulse" size={24} /> },
-  { texto: "Extrayendo los comentarios y opiniones públicas...", icono: <Database className="text-amber-400 animate-bounce" size={24} /> },
-  { texto: "Estructurando y guardando la información recopilada...", icono: <Sparkles className="text-purple-400 animate-spin" style={{ animationDuration: '3s' }} size={24} /> },
-  { texto: "Inyectando conocimientos nuevos en tu asistente...", icono: <Brain className="text-emerald-400 animate-pulse" size={24} /> }
+  { texto: "Subiendo datos a la nube...", icono: <Network className="text-indigo-400 animate-pulse" size={24} /> },
+  { texto: "Analizando el enlace y obteniendo la ficha técnica...", icono: <Search className="text-indigo-400 animate-pulse" size={24} /> },
+  { texto: "Extrayendo reseñas y clasificando...", icono: <Database className="text-amber-400 animate-bounce" size={24} /> },
+  { texto: "Limpiando y estructurando la información recopilada...", icono: <Sparkles className="text-purple-400 animate-spin" style={{ animationDuration: '3s' }} size={24} /> },
+  { texto: "Indexando vectores y actualizando la base de datos...", icono: <Brain className="text-emerald-400 animate-pulse" size={24} /> }
 ];
 
 export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar }: ModalCargarProductoProps) {
@@ -108,8 +108,8 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
 
   const manejarExito = (sesionId: string) => {
     setUrl('');
-    setCargando(false); 
-    setExito(true);     
+    setCargando(false);
+    setExito(true);
     setSesionLista(sesionId); // 🔴 Guardamos el ID, pero NO navegamos todavía
   };
 
@@ -165,16 +165,7 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
                 </p>
               </div>
 
-              {/* NOTA 2: EXPLICACIÓN DEL NAVEGADOR EN SERVIDOR */}
-              <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4 space-y-2.5">
-                <div className="flex items-center gap-2 text-indigo-400 text-sm font-semibold">
-                  <Sparkles size={16} />
-                  <span>Ventana del Navegador</span>
-                </div>
-                <p className="text-sm text-neutral-400 leading-relaxed">
-                  El sistema abrirá una ventana del navegador de forma interna para ingresar de manera directa al enlace, garantizando un escaneo fiel y completo del contenido.
-                </p>
-              </div>
+
             </div>
 
             <div className="text-xs text-neutral-500 font-medium">

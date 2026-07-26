@@ -33,26 +33,20 @@ const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) =>
 };
 
 export const apiHerramientas = {
-  // 🚀 ACTUALIZADO: Rutas corregidas hacia /api/metricas/
+  // 🚀 Diagnósticos y estados de auditoría
   diagnostico: () => fetchHerramienta('/api/metricas/diagnostico', { method: 'GET' }),
-  // Añade esta línea dentro del objeto apiHerramientas:
   obtenerUltimoAsin: () => fetchHerramienta('/api/metricas/ultimo-asin', { method: 'GET' }),
-  
-  // 🚀 Mantenemos los comentados en el backend, apuntando a las rutas correctas para el futuro
+  metricasUltima: () => fetchHerramienta('/api/metricas/ultima', { method: 'GET' }),
   reportes: () => fetchHerramienta('/api/metricas/reportes', { method: 'GET' }),
+
+  // 🧹 LIMPIEZA DE PERFIL: Ejecuta el vaciado en SQLite y ChromaDB de forma segura
   limpiarCache: () => fetchHerramienta('/api/metricas/limpiar-cache', { method: 'POST' }),
-  
-  // 🚀 NUEVO: Requieren el ASIN como parámetro en la URL
+
+  // 📊 Métricas y exportaciones específicas por ASIN
   exportarCsv: (asin: string) => fetchHerramienta(`/api/metricas/exportar-csv/${asin}`, { method: 'POST' }),
   metricasResumen: (asin: string) => fetchHerramienta(`/api/metricas/resumen/${asin}`, { method: 'GET' }),
-  
-  // 🚀 ACTUALIZADO: Ruta corregida
-  metricasUltima: () => fetchHerramienta('/api/metricas/ultima', { method: 'GET' }),
 
-  /**
-   * Obtiene el nombre del producto que está actualmente analizado.
-   * Útil para pintar cabeceras o estados rápidos en los paneles.
-   */
+  // 🛍️ Información de contexto sobre el Producto actual
   obtenerProductoActual: () => fetchHerramienta('/api/dashboard/producto-actual', { method: 'GET' }),
 
   /**
