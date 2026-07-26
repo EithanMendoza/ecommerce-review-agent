@@ -29,10 +29,25 @@ export interface SesionChat {
   fecha_creacion?: string;
 }
 
+// 🆕 Producto ya analizado (tabla `productos`), independiente de si tiene o no un chat activo
+export interface ProductoAnalizado {
+  asin: string;
+  nombre: string;
+}
+
 export interface MensajeHistorial {
   id: string;
   sesion_id: string;
   rol: 'user' | 'assistant';
   contenido: string;
   fecha_creacion?: string;
+}
+
+// 🆕 Respuesta completa de GET /sesiones/:id/mensajes (historial.py ya manda asin y titulo,
+// los necesitamos en el frontend para saber sobre qué producto va el chat actual)
+export interface RespuestaHistorialChat {
+  sesion_id: string;
+  asin: string;
+  titulo?: string;
+  mensajes: MensajeHistorial[];
 }

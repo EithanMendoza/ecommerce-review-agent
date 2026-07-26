@@ -17,7 +17,7 @@ import {
 interface ModalCargarProductoProps {
   estaAbierto: boolean;
   alCerrar: () => void;
-  alCompletar: () => void;
+  alCompletar: (sesionId: string) => void;
 }
 
 // Fases dinámicas que cambian con su respectivo icono central
@@ -35,6 +35,7 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
   const [error, setError] = useState('');
   const [exito, setExito] = useState(false);
   const [pasoActual, setPasoActual] = useState(0);
+  const [sesionLista, setSesionLista] = useState<string | null>(null);
 
   // Sistema interactivo para rotar las fases de carga
   useEffect(() => {
@@ -61,15 +62,55 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
     setCargando(true);
 
     try {
-      await apiLocal.cargarNuevoProducto(url);
-      setUrl('');
-      setExito(true);
-      alCompletar();
+      // 1. Iniciamos el proceso (nos devuelve "listo" o "procesando")
+      const respuestaInicial = await apiLocal.cargarNuevoProducto(url);
+
+      // CASO A: Vía Rápida (El producto ya existía en BD)
+      if (respuestaInicial.status === "listo" && respuestaInicial.sesion_id) {
+        manejarExito(respuestaInicial.sesion_id);
+        return;
+      }
+
+      // CASO B: Vía Lenta (Scraping en segundo plano)
+      if (respuestaInicial.status === "procesando") {
+        const asin = respuestaInicial.asin;
+        let estadoActual = "procesando";
+        let sesionIdFinal = null;
+
+        // Bucle de consulta (Polling) cada 3 segundos
+        while (estadoActual === "procesando") {
+          // Esperamos 3 segundos antes de preguntar de nuevo
+          await new Promise(resolve => setTimeout(resolve, 3000));
+
+          // Consultamos el nuevo endpoint de estado
+          const respuestaEstado = await apiLocal.consultarEstadoScraping(asin);
+          estadoActual = respuestaEstado.estado;
+
+          if (estadoActual === "completado") {
+            sesionIdFinal = respuestaEstado.sesion_id;
+          }
+          if (estadoActual === "error") {
+            throw new Error("Ocurrió un error durante la extracción de datos.");
+          }
+        }
+
+        if (sesionIdFinal) {
+          manejarExito(sesionIdFinal);
+        } else {
+          throw new Error("No se pudo obtener el ID de la sesión tras completar el proceso.");
+        }
+      }
     } catch (err: any) {
-      setError(err.message || 'No pudimos procesar el enlace obligatorio. Asegúrate de que sea correcto.');
-    } finally {
+      setError(err.message || 'No pudimos procesar el enlace obligatorio.');
       setCargando(false);
     }
+  };
+
+  const manejarExito = (sesionId: string) => {
+    setUrl('');
+    setCargando(false); 
+    setExito(true);     
+    setSesionLista(sesionId); // 🔴 Guardamos el ID, pero NO navegamos todavía
   };
 
   const manejarCerrar = () => {
@@ -155,7 +196,11 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
                   Hemos terminado de leer y procesar todas las opiniones del producto de manera exitosa. Tu Inteligencia Artificial ya aprendió de esta información y está lista para responder todas tus preguntas.
                 </p>
                 <button
-                  onClick={manejarCerrar}
+                  // 🔴 CORRECCIÓN AQUÍ: Al hacer clic navegamos al chat y cerramos el modal
+                  onClick={() => {
+                    if (sesionLista) alCompletar(sesionLista);
+                    manejarCerrar();
+                  }}
                   className="mt-4 px-6 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition shadow-lg shadow-emerald-600/20"
                 >
                   ¡Excelente, empezar!

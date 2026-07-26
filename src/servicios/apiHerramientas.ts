@@ -35,6 +35,8 @@ const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) =>
 export const apiHerramientas = {
   // 🚀 ACTUALIZADO: Rutas corregidas hacia /api/metricas/
   diagnostico: () => fetchHerramienta('/api/metricas/diagnostico', { method: 'GET' }),
+  // Añade esta línea dentro del objeto apiHerramientas:
+  obtenerUltimoAsin: () => fetchHerramienta('/api/metricas/ultimo-asin', { method: 'GET' }),
   
   // 🚀 Mantenemos los comentados en el backend, apuntando a las rutas correctas para el futuro
   reportes: () => fetchHerramienta('/api/metricas/reportes', { method: 'GET' }),
@@ -55,7 +57,7 @@ export const apiHerramientas = {
 
   /**
    * Elimina de golpe todo el historial de conversaciones de un perfil específico.
-   * @param usuarioId El identificador único del usuario en sesión (ej: 'yahirpuc')
+   * @param usuarioId El identificador único del usuario en sesión
    */
   purgarHistorialPerfil: (usuarioId: string) =>
     fetchHerramienta(`/api/usuarios/${usuarioId}/historial/purgar`, { method: 'DELETE' }),

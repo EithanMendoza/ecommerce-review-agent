@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { apiHerramientas } from '../servicios/apiHerramientas';
-import { apiLocal } from '../servicios/apiLocal'; // <-- ¡IMPORTANTE: Agregamos esta importación!
 
 // Definimos el contrato para la información del Modal
 export interface DatosModal {
@@ -34,11 +33,34 @@ export const usarHerramientas = () => {
     }
   };
 
-  const manejarExportarCsv = async () => {
+  const manejarExportarCsv = async (asin?: string) => {
+    // 🆕 Sin producto seleccionado no hay nada que exportar (antes esto llamaba a un
+    // endpoint que ni siquiera existe en el backend: /api/herramientas/exportar-csv)
+    if (!asin) {
+      setDatosModal({
+        titulo: 'Exportar CSV',
+        contenido: { error: 'Abre un chat sobre un producto (o elige uno en "Chat nuevo") para poder exportar su CSV.' },
+        tipo: 'default'
+      });
+      return;
+    }
+
     setCargandoTool(true); // Encendemos el loader
     try {
-      // Llamamos a la función que creaste en apiLocal (que fuerza la descarga)
-      await apiLocal.descargarCSV();
+      // apiHerramientas.exportarCsv(asin) pega a POST /api/metricas/exportar-csv/{asin}
+      // y ya devuelve el Blob (fetchHerramienta detecta el content-type text/csv)
+      const blob: Blob = await apiHerramientas.exportarCsv(asin);
+
+      const urlArchivo = window.URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = urlArchivo;
+      enlace.setAttribute('download', `Analisis_Resenas_${asin}.csv`);
+
+      document.body.appendChild(enlace);
+      enlace.click();
+
+      enlace.parentNode?.removeChild(enlace);
+      window.URL.revokeObjectURL(urlArchivo);
     } catch (error: any) {
       console.error(`Error al exportar CSV:`, error);
       setDatosModal({ 

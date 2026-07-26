@@ -9,6 +9,7 @@ import ModalHerramientas from '../ui/ModalHerramientas';
 import ModalAjustes from '../ui/vistas/ModalAjustes';
 import { apiAuth } from '../../servicios/apiAuth'; // Usamos tu apiAuth original
 import DangerConfirmModal from '../../componentes/chat/DangerConfirmModal';
+import { apiHerramientas } from '../../servicios/apiHerramientas';
 
 export default function EnvolturaAdmin() {
   const ubicacion = useLocation();
@@ -23,7 +24,7 @@ export default function EnvolturaAdmin() {
   const { diagnostico, datosModal, cerrarModal, cargandoTool } = usarHerramientas();
 
   // Estado de usuario dinámico que se llenará con el token real
-  const [usuario, setUsuario] = useState({ id: '', nombre: 'Usuario', correo: '' });
+  const [usuario, setUsuario] = useState({ id: '', nombre: 'Usuario', apellido: '', correo: '' });
 
   const [chatAEliminar, setChatAEliminar] = useState<string | null>(null);
   const [eliminandoChat, setEliminandoChat] = useState(false);
@@ -74,6 +75,13 @@ export default function EnvolturaAdmin() {
         // 🚨 Leemos el campo 'username' que viene del backend
         const correoDetectado = payload.username || "";
 
+        // 🆕 nombre/apellido ahora sí vienen en el token (antes solo estaba 'sub').
+        // Si por algún motivo faltan (ej. tokens viejos emitidos antes de este cambio),
+        // hacemos fallback al correo como antes.
+        const nombreDetectado = payload.nombre || "";
+        const apellidoDetectado = payload.apellido || "";
+        const nombreCompleto = `${nombreDetectado} ${apellidoDetectado}`.trim();
+
         setUsuario({
           // El ID sigue siendo el UUID (sub) para que la base de datos no falle al purgar
           id: payload.sub || '',
@@ -81,10 +89,8 @@ export default function EnvolturaAdmin() {
           // Guardamos el correo completo
           correo: correoDetectado,
 
-          // Cortamos el correo para extraer el nombre limpio (ej: "yahirpuc")
-          nombre: correoDetectado
-            ? correoDetectado.split('@')[0]
-            : 'Usuario'
+          nombre: nombreCompleto || (correoDetectado ? correoDetectado.split('@')[0] : 'Usuario'),
+          apellido: apellidoDetectado
         });
       }
     }
@@ -123,10 +129,18 @@ export default function EnvolturaAdmin() {
     }
   };
 
-  const enlacesPrincipales = [
-    { ruta: '/', icono: LayoutDashboard, texto: 'Panel Principal' },
-    { ruta: '/chat', icono: PlusCircle, texto: 'Nuevo Chat' },
-  ];
+  const manejarNuevoChat = async () => {
+    try {
+      const respuesta = await apiHerramientas.obtenerUltimoAsin();
+      
+      if (respuesta && respuesta.asin) {
+        // Navegamos al chat limpio. Tu hook se encargará de asociarlo al último producto.
+        navigate('/chat');
+      }
+    } catch (error) {
+      navigate('/chat');
+    }
+  };
 
   return (
     <div className="flex h-screen bg-[#121212] text-slate-100 select-none">
@@ -142,23 +156,26 @@ export default function EnvolturaAdmin() {
 
         {/* Enlaces Principales */}
         <nav className="px-4 py-4 space-y-1 shrink-0">
-          {enlacesPrincipales.map((enlace) => {
-            const activo = ubicacion.pathname === enlace.ruta;
-            const Icono = enlace.icono;
-            return (
-              <Link
-                key={enlace.ruta}
-                to={enlace.ruta}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${activo
-                  ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 font-medium shadow-sm shadow-indigo-950/20'
-                  : 'text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-200'
-                  }`}
-              >
-                <Icono size={18} className={activo ? 'text-indigo-400' : 'text-neutral-400'} />
-                {enlace.texto}
-              </Link>
-            );
-          })}
+          {/* 1. Panel Principal sigue siendo un Link normal */}
+          <Link
+            to="/"
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${ubicacion.pathname === '/'
+              ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 font-medium shadow-sm shadow-indigo-950/20'
+              : 'text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-200'
+              }`}
+          >
+            <LayoutDashboard size={18} className={ubicacion.pathname === '/' ? 'text-indigo-400' : 'text-neutral-400'} />
+            Panel Principal
+          </Link>
+
+          {/* 2. Nuevo Chat ahora es un Botón inteligente */}
+          <button
+            onClick={manejarNuevoChat}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-200"
+          >
+            <PlusCircle size={18} className="text-neutral-400" />
+            Nuevo Chat
+          </button>
         </nav>
 
         {/* Historial de Chats Desplazables */}

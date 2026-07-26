@@ -8,9 +8,10 @@ interface Props {
   alEnviar: (texto: string) => void;
   cargando: boolean;
   onDetener?: () => void; // 🔴 Nueva propiedad para detener
+  asinActual?: string; // 🆕 Producto del chat actual, para las Herramientas rápidas (ej. exportar CSV)
 }
 
-export default function AreaEscritura({ alEnviar, cargando, onDetener }: Props) {
+export default function AreaEscritura({ alEnviar, cargando, onDetener, asinActual }: Props) {
   const [texto, setTexto] = useState('');
   const [bloqueoClick, setBloqueoClick] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -66,7 +67,7 @@ export default function AreaEscritura({ alEnviar, cargando, onDetener }: Props) 
     <div className="p-4 bg-[#121212] border-t border-neutral-900/80 shrink-0 select-none">
       <div className="max-w-4xl mx-auto flex items-center gap-3">
 
-        {!escuchando && <MenuHerramientas />}
+        {!escuchando && <MenuHerramientas asinActual={asinActual} />}
 
         {escuchando ? (
           <div className="flex-1 flex items-center h-[46px] px-4 bg-[#202020] border border-neutral-800 rounded-full shadow-lg transition-all">

@@ -1,4 +1,4 @@
-import type { ResenaRecuperada, SesionChat, MensajeHistorial } from '../tipos/contratos';
+import type { ResenaRecuperada, SesionChat, MensajeHistorial, ProductoAnalizado, RespuestaHistorialChat } from '../tipos/contratos';
 import { apiAuth } from '../servicios/apiAuth';
 
 // Ajusta el puerto si tu Uvicorn de Python está corriendo en uno distinto
@@ -35,70 +35,98 @@ export const apiLocal = {
   },
 
   /**
-   * 2. Llamada en Streaming (Lectura de Bytes)
-   * Conecta con el endpoint de FastAPI que devuelve el streaming del modelo
+   * 2. Llamada en Streaming para RAG (Devuelve el Response completo)
+   * Delega la lectura de los bytes (chunks) al hook usarAgenteRAG para un mejor control de estado.
    */
-  enviarMensajeStreaming: async (
-    pregunta: string,
-    sesionId: string | undefined,
-    alRecibirChunk: (textoNuevo: string) => void,
-    alCompletar: () => void,
-    signal?: AbortSignal // 🔴 1. AÑADIMOS EL PARÁMETRO AQUÍ
-  ) => {
-    try {
-      const token = apiAuth.obtenerToken();
-      
-      const payload: { mensaje: string; id_sesion?: string } = { mensaje: pregunta };
-      if (sesionId) {
-        payload.id_sesion = sesionId; 
-      }
+  consultarChat: async (
+    mensaje: string,
+    idSesion: string,
+    signal?: AbortSignal
+  ): Promise<Response> => {
+    const token = apiAuth.obtenerToken();
 
-      const respuesta = await fetch(`${URL_BASE}/api/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload), 
-        signal: signal // 🔴 2. SE LO PASAMOS A FETCH AQUÍ
-      });
+    // Importante: Asegúrate de que la ruta coincida con el @router.post("/consultar") de tu chat.py
+    const respuesta = await fetch(`${URL_BASE}/api/consultar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        mensaje: mensaje,
+        id_sesion: idSesion
+      }),
+      signal: signal
+    });
 
-      if (!respuesta.ok) {
-        if (respuesta.status === 401) {
-          throw new Error('No autorizado: Token inválido en el chat');
-        }
-        throw new Error('Error en la comunicación con el agente RAG');
+    if (!respuesta.ok) {
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
       
-      if (!respuesta.body) throw new Error('El servidor no devolvió un stream de datos');
-
-      const lector = respuesta.body.getReader();
-      const decodificador = new TextDecoder('utf-8');
-      let leyendo = true;
-
-      while (leyendo) {
-        const { value, done } = await lector.read();
-        leyendo = !done;
-        
-        if (value) {
-          const pedazoTexto = decodificador.decode(value, { stream: true });
-          alRecibirChunk(pedazoTexto);
-        }
-      }
-
-      alCompletar();
-      
-    } catch (error: any) {
-      // 🔴 3. EVITAMOS MOSTRAR ERROR SI FUE CANCELADO POR EL USUARIO
-      if (error.name === 'AbortError' || error.message.includes('aborted')) {
-        console.log('Petición de red cancelada correctamente por el usuario.');
-        // Opcional: No llamamos a alCompletar() aquí porque el hook ya manejó el estado
-      } else {
-        console.error('Error en el stream del chat:', error);
-        alRecibirChunk('\n\n[Error: Se perdió la conexión con el motor backend o el token falló]');
-        alCompletar();
-      }
+      const errorData = await respuesta.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Error en la comunicación con el agente RAG');
     }
+
+    // Retornamos el objeto Response sin procesar
+    return respuesta;
+  },
+
+  /**
+   * Crea una nueva sesión de chat explícita atada a un producto ya analizado.
+   * Conecta con el POST /api/sesiones de historial.py (usa crear_sesion() de sesiones.py).
+   */
+  ccrearSesion: async (asin: string, titulo?: string): Promise<{ id: string; asin: string; titulo: string }> => {
+    const token = apiAuth.obtenerToken();
+
+    const respuesta = await fetch(`${URL_BASE}/api/sesiones`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ asin, titulo })
+    });
+
+    if (!respuesta.ok) {
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+      const errorData = await respuesta.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'No se pudo crear la sesión de chat.');
+    }
+
+    return await respuesta.json();
+  },
+
+  /**
+   * Lista todos los productos ya analizados (independiente de si tienen o no un chat activo).
+   * Se usa en "Chat nuevo" para dejar elegir sobre cuál producto seguir preguntando.
+   */
+  listarProductos: async (): Promise<ProductoAnalizado[]> => {
+    const token = apiAuth.obtenerToken();
+    const respuesta = await fetch(`${URL_BASE}/api/productos`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!respuesta.ok) {
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+      throw new Error('No se pudieron cargar los productos analizados.');
+    }
+
+    const datos = await respuesta.json();
+    return datos.productos;
   },
 
   listarSesiones: async (): Promise<SesionChat[]> => {
@@ -111,10 +139,9 @@ export const apiLocal = {
     });
 
     if (!respuesta.ok) {
-      // Interceptamos el 401 (Token expirado o inválido)
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion(); // Borramos el token inservible
-        window.location.href = '/login'; // Forzamos la redirección al login
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
       throw new Error('No se pudieron cargar las sesiones');
@@ -124,7 +151,7 @@ export const apiLocal = {
     return datos.sesiones; 
   },
 
-  obtenerHistorialChat: async (sesionId: string): Promise<MensajeHistorial[]> => {
+  obtenerHistorialChat: async (sesionId: string): Promise<RespuestaHistorialChat> => {
     const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/sesiones/${sesionId}/mensajes`, {
       method: 'GET',
@@ -134,20 +161,19 @@ export const apiLocal = {
     });
 
     if (!respuesta.ok) {
-      // Interceptamos el 401 (Token expirado o inválido)
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion(); // Borramos el token inservible
-        window.location.href = '/login'; // Forzamos la redirección al login
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
       throw new Error('No se pudo cargar el historial del chat');
     }
 
-    const datos = await respuesta.json();
-    return datos.mensajes; // Devuelve los mensajes de esa sesión específica
+    // 🆕 Devolvemos el objeto completo (antes solo se devolvía `datos.mensajes`,
+    // y se perdía el `asin` que el backend ya manda en historial.py)
+    return await respuesta.json();
   },
 
-  // Agrega esto debajo de tus métodos existentes en apiLocal
   eliminarSesion: async (sesionId: string): Promise<void> => {
     const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/sesiones/${sesionId}`, {
@@ -165,19 +191,43 @@ export const apiLocal = {
       }
       throw new Error('No se pudo eliminar la sesión');
     }
-    
-    // No necesitamos devolver nada, un código 200/204 significa éxito
   },
 
-  cargarNuevoProducto: async (url: string): Promise<{ estado: string, mensaje: string }> => {
+  consultarEstadoScraping: async (asin: string): Promise<{ estado: string, asin: string, sesion_id?: string }> => {
     const token = apiAuth.obtenerToken();
-    const respuesta = await fetch(`${URL_BASE}/api/producto/cargar`, {
+    const respuesta = await fetch(`${URL_BASE}/api/scraper/estado/${asin}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!respuesta.ok) {
+       // Le agregamos la validación del 401 para mantener la seguridad
+       if (respuesta.status === 401) {
+         apiAuth.cerrarSesion();
+         window.location.href = '/login';
+         throw new Error('Sesión expirada.');
+       }
+       throw new Error('Error al consultar el estado del scraping.');
+    }
+    
+    return await respuesta.json();
+  },
+
+  cargarNuevoProducto: async (url: string): Promise<any> => {
+    const token = apiAuth.obtenerToken();
+    const respuesta = await fetch(`${URL_BASE}/api/scraper/iniciar`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ url })
+      // 🔴 CORRECCIÓN AQUÍ: Ajustado a lo que espera SolicitudScraping
+      body: JSON.stringify({ 
+        url_o_asin: url, 
+        marketplace: "com.mx" // Puedes poner "amazon" por defecto si tu backend lo requiere
+      })
     });
 
     if (!respuesta.ok) {
@@ -211,27 +261,18 @@ export const apiLocal = {
       throw new Error('Hubo un error al generar o descargar el archivo CSV.');
     }
 
-    // 1. Convertimos la respuesta cruda en un archivo binario (Blob)
     const blob = await respuesta.blob();
-    
-    // 2. Creamos una URL temporal en la memoria del navegador para este archivo
     const urlArchivo = window.URL.createObjectURL(blob);
     
-    // 3. Magia de JS: Creamos un enlace <a> invisible y simulamos un clic
     const enlace = document.createElement('a');
     enlace.href = urlArchivo;
-    
-    // Le ponemos un nombre dinámico con la fecha/hora actual
     const nombreArchivo = `Reporte_Analisis_${new Date().getTime()}.csv`;
     enlace.setAttribute('download', nombreArchivo);
     
     document.body.appendChild(enlace);
-    enlace.click(); // Forzamos la descarga
+    enlace.click(); 
     
-    // 4. Limpiamos el DOM y la memoria RAM del navegador
     enlace.parentNode?.removeChild(enlace);
     window.URL.revokeObjectURL(urlArchivo);
-  },
-
-  
+  }
 };

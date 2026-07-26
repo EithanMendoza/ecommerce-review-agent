@@ -3,7 +3,11 @@ import { Wrench, Activity, FileText, Download, BarChart2, Plus } from 'lucide-re
 import { usarHerramientas } from '../../hooks/usarHerramientas';
 import ModalHerramientas from '../ui/ModalHerramientas';
 
-export default function MenuHerramientas() {
+interface Props {
+  asinActual?: string; // 🆕 Producto sobre el que va el chat actual
+}
+
+export default function MenuHerramientas({ asinActual }: Props) {
   const [abierto, setAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -26,7 +30,7 @@ export default function MenuHerramientas() {
 
   const itemsMenu: { nombre: string; icono: React.ElementType; accion: () => void; peligro?: boolean }[] = [
     { nombre: 'Listar Reportes', icono: FileText, accion: reportes },
-    { nombre: 'Exportar CSV', icono: Download, accion: exportarCsv },
+    { nombre: 'Exportar CSV', icono: Download, accion: () => exportarCsv(asinActual) },
   ];
 
   return (

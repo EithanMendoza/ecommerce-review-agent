@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { apiHerramientas } from '../../src/servicios/apiHerramientas';
+import { apiHerramientas } from '../servicios/apiHerramientas';
+import { apiLocal } from '../servicios/apiLocal';
 import { Star, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp } from 'lucide-react';
 
 interface MetricasResumen {
-  producto: string; // 🚨 AGREGADO: Nombre del producto actual
+  producto: string; 
   promedio_estrellas: string;
   distribucion_sentimientos: string;
   reseña_destacada: string;
@@ -39,25 +40,47 @@ const extraerReseña = (texto: string) => {
 export default function PanelPrincipal() {
   const [datos, setDatos] = useState<MetricasResumen | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [verCompleta, setVerCompleta] = useState(false);
 
   useEffect(() => {
-    apiHerramientas.metricasResumen()
-      .then((res: any) => setDatos(res))
-      .catch(() => setError(true))
-      .finally(() => setCargando(false));
+    const cargarDatos = async () => {
+      try {
+        // 1. Le preguntamos a la base de datos cuál fue el último producto real
+        const respuestaAsin = await apiHerramientas.obtenerUltimoAsin();
+        
+        if (!respuestaAsin || !respuestaAsin.asin) {
+           setError("No hay productos analizados en la base de datos.");
+           return;
+        }
+
+        // 2. Solicitamos las métricas específicas de ese ASIN
+        const metricas = await apiHerramientas.metricasResumen(respuestaAsin.asin);
+        setDatos(metricas);
+
+      } catch (err: any) {
+        console.error(err);
+        setError("Aún no hay productos analizados. Carga un enlace para empezar.");
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarDatos();
   }, []);
 
   if (cargando) return (
     <div className="flex items-center justify-center h-full">
-      <div className="w-6 h-6 border-2 border-neutral-700 border-t-indigo-400 rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-neutral-800 border-t-indigo-500 rounded-full animate-spin" />
+        <span className="text-sm text-neutral-400 font-medium">Calculando métricas del sistema...</span>
+      </div>
     </div>
   );
 
   if (error || !datos) return (
-    <div className="flex items-center justify-center h-full text-neutral-500 text-sm">
-      No se pudo cargar el resumen. Verifica que hay un producto analizado.
+    <div className="flex items-center justify-center h-full text-neutral-500 text-sm bg-[#181818] border border-neutral-800 rounded-xl p-8 max-w-md mx-auto text-center">
+      {error || 'No se pudo cargar el resumen. Verifica que hay un producto analizado.'}
     </div>
   );
 
@@ -88,7 +111,7 @@ export default function PanelPrincipal() {
       <div className="grid grid-cols-3 gap-4">
 
         {/* Promedio estrellas */}
-        <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 flex flex-col gap-3">
+        <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 flex flex-col gap-3 transition-all hover:border-neutral-700">
           <div className="flex items-center gap-2 text-neutral-500">
             <Star size={15} className="text-yellow-400" />
             <span className="text-[10px] font-bold uppercase tracking-widest">Calificación</span>
@@ -101,7 +124,7 @@ export default function PanelPrincipal() {
         </div>
 
         {/* Positivas */}
-        <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 flex flex-col gap-3">
+        <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 flex flex-col gap-3 transition-all hover:border-neutral-700">
           <div className="flex items-center gap-2 text-neutral-500">
             <ThumbsUp size={15} className="text-emerald-400" />
             <span className="text-[10px] font-bold uppercase tracking-widest">Positivas</span>
@@ -110,13 +133,13 @@ export default function PanelPrincipal() {
             <span className="text-4xl font-bold text-emerald-400">{positivas}</span>
             <span className="text-neutral-500 text-sm ml-1">reseñas</span>
           </div>
-          <div className="w-full bg-neutral-800 rounded-full h-1.5">
-            <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${pctPositivo}%` }} />
+          <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${pctPositivo}%` }} />
           </div>
         </div>
 
         {/* Negativas */}
-        <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 flex flex-col gap-3">
+        <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 flex flex-col gap-3 transition-all hover:border-neutral-700">
           <div className="flex items-center gap-2 text-neutral-500">
             <ThumbsDown size={15} className="text-red-400" />
             <span className="text-[10px] font-bold uppercase tracking-widest">Negativas</span>
@@ -133,7 +156,7 @@ export default function PanelPrincipal() {
       </div>
 
       {/* RESEÑA DESTACADA */}
-      <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 space-y-4">
+      <div className="bg-[#181818] border border-neutral-800 rounded-xl p-5 space-y-4 transition-all hover:border-neutral-700">
         <div className="flex items-center gap-2 text-neutral-500">
           <MessageSquare size={15} className="text-indigo-400" />
           <span className="text-[10px] font-bold uppercase tracking-widest">Opinión más crítica detectada</span>
@@ -161,12 +184,14 @@ export default function PanelPrincipal() {
           {textoReseña}
         </p>
 
-        <button
-          className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-          onClick={() => setVerCompleta(!verCompleta)}
-        >
-          {verCompleta ? 'Mostrar menos ↑' : 'Ver reseña completa →'}
-        </button>
+        {textoReseña.length > 200 && (
+          <button
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
+            onClick={() => setVerCompleta(!verCompleta)}
+          >
+            {verCompleta ? 'Mostrar menos ↑' : 'Ver reseña completa →'}
+          </button>
+        )}
       </div>
 
     </div>
