@@ -2,7 +2,7 @@ import type { ResenaRecuperada, SesionChat, MensajeHistorial, ProductoAnalizado,
 import { apiAuth } from '../servicios/apiAuth';
 
 // Ajusta el puerto si tu Uvicorn de Python está corriendo en uno distinto
-const URL_BASE = 'http://localhost:8000'; 
+const URL_BASE = 'http://localhost:8000';
 
 export const apiLocal = {
   /**
@@ -12,13 +12,13 @@ export const apiLocal = {
   obtenerResenas: async (): Promise<ResenaRecuperada[]> => {
     try {
       const token = apiAuth.obtenerToken(); // Obtenemos el JWT
-      
+
       const respuesta = await fetch(`${URL_BASE}/api/resenas`, {
         headers: {
           'Authorization': `Bearer ${token}` // Inyectamos el JWT
         }
       });
-      
+
       if (!respuesta.ok) {
         // Opcional: Manejo específico si el token de FastAPI expira
         if (respuesta.status === 401) {
@@ -26,7 +26,7 @@ export const apiLocal = {
         }
         throw new Error(`Error HTTP: ${respuesta.status}`);
       }
-      
+
       return await respuesta.json();
     } catch (error) {
       console.error('Fallo al obtener las reseñas:', error);
@@ -65,7 +65,7 @@ export const apiLocal = {
         window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
-      
+
       const errorData = await respuesta.json().catch(() => ({}));
       throw new Error(errorData.detail || 'Error en la comunicación con el agente RAG');
     }
@@ -78,7 +78,7 @@ export const apiLocal = {
    * Crea una nueva sesión de chat explícita atada a un producto ya analizado.
    * Conecta con el POST /api/sesiones de historial.py (usa crear_sesion() de sesiones.py).
    */
-  ccrearSesion: async (asin: string, titulo?: string): Promise<{ id: string; asin: string; titulo: string }> => {
+  crearSesion: async (asin: string, titulo?: string): Promise<{ id: string; asin: string; titulo: string }> => {
     const token = apiAuth.obtenerToken();
 
     const respuesta = await fetch(`${URL_BASE}/api/sesiones`, {
@@ -148,7 +148,7 @@ export const apiLocal = {
     }
 
     const datos = await respuesta.json();
-    return datos.sesiones; 
+    return datos.sesiones;
   },
 
   obtenerHistorialChat: async (sesionId: string): Promise<RespuestaHistorialChat> => {
@@ -203,15 +203,15 @@ export const apiLocal = {
     });
 
     if (!respuesta.ok) {
-       // Le agregamos la validación del 401 para mantener la seguridad
-       if (respuesta.status === 401) {
-         apiAuth.cerrarSesion();
-         window.location.href = '/login';
-         throw new Error('Sesión expirada.');
-       }
-       throw new Error('Error al consultar el estado del scraping.');
+      // Le agregamos la validación del 401 para mantener la seguridad
+      if (respuesta.status === 401) {
+        apiAuth.cerrarSesion();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada.');
+      }
+      throw new Error('Error al consultar el estado del scraping.');
     }
-    
+
     return await respuesta.json();
   },
 
@@ -224,8 +224,8 @@ export const apiLocal = {
         'Authorization': `Bearer ${token}`
       },
       // 🔴 CORRECCIÓN AQUÍ: Ajustado a lo que espera SolicitudScraping
-      body: JSON.stringify({ 
-        url_o_asin: url, 
+      body: JSON.stringify({
+        url_o_asin: url,
         marketplace: "com.mx" // Puedes poner "amazon" por defecto si tu backend lo requiere
       })
     });
@@ -239,7 +239,7 @@ export const apiLocal = {
       const dataError = await respuesta.json().catch(() => null);
       throw new Error(dataError?.detail || 'Ocurrió un error al cargar el producto. Verifica la URL.');
     }
-    
+
     return await respuesta.json();
   },
 
@@ -263,15 +263,15 @@ export const apiLocal = {
 
     const blob = await respuesta.blob();
     const urlArchivo = window.URL.createObjectURL(blob);
-    
+
     const enlace = document.createElement('a');
     enlace.href = urlArchivo;
     const nombreArchivo = `Reporte_Analisis_${new Date().getTime()}.csv`;
     enlace.setAttribute('download', nombreArchivo);
-    
+
     document.body.appendChild(enlace);
-    enlace.click(); 
-    
+    enlace.click();
+
     enlace.parentNode?.removeChild(enlace);
     window.URL.revokeObjectURL(urlArchivo);
   }
