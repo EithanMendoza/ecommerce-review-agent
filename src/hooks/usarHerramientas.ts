@@ -5,7 +5,7 @@ import { apiHerramientas } from '../servicios/apiHerramientas';
 export interface DatosModal {
   titulo: string;
   contenido: any;
-  tipo: 'preguntas' | 'default';
+  tipo: 'diagnostico' | 'preguntas' | 'default';
 }
 
 export const usarHerramientas = () => {
@@ -13,7 +13,7 @@ export const usarHerramientas = () => {
   const [datosModal, setDatosModal] = useState<DatosModal | null>(null);
 
   // Auxiliar reusable para ejecutar acciones tipo Modal
-  /*
+
   const ejecutar = async (nombre: string, accion: () => Promise<any>, tipo: DatosModal['tipo'] = 'default') => {
     setCargandoTool(true);
     try {
@@ -30,7 +30,7 @@ export const usarHerramientas = () => {
       setCargandoTool(false);
     }
   };
-  */
+
 
   // 🟢 1. DESCARGA DEL REPORTE COMPLETO EN EXCEL (.xlsx)
   const manejarExportarExcel = async (asin?: string) => {
@@ -155,7 +155,10 @@ export const usarHerramientas = () => {
     datosModal,
     cerrarModal,
     exportarExcel: manejarExportarExcel,
-    exportarPdf: manejarExportarPdf, // 🚀 Activado en el retorno
+    exportarPdf: manejarExportarPdf,
+    diagnostico: () => ejecutar('Diagnóstico del Sistema', apiHerramientas.diagnostico, 'default'),
+    // 🚀 Activado en el retorno
     // preguntasSugeridas: manejarPreguntasSugeridas,
+
   };
 };
