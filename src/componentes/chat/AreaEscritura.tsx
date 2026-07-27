@@ -21,8 +21,13 @@ export default function AreaEscritura({ alEnviar, cargando, onDetener, asinActua
 
   useEffect(() => {
     if (textareaRef.current) {
+      const ALTURA_MAXIMA_PX = 128; // debe coincidir con max-h-32 del className
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      const nuevaAltura = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${nuevaAltura}px`;
+      // Solo habilitamos scroll interno si el texto realmente excede el máximo;
+      // así evitamos que aparezca una barra de scroll fantasma con poco o nada escrito.
+      textareaRef.current.style.overflowY = nuevaAltura > ALTURA_MAXIMA_PX ? 'auto' : 'hidden';
     }
   }, [texto]);
 
@@ -100,7 +105,7 @@ export default function AreaEscritura({ alEnviar, cargando, onDetener, asinActua
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={manejarTecla}
               placeholder="Escribe tu mensaje aquí..."
-              className="w-full max-h-32 min-h-[44px] py-3 pl-4 pr-2 bg-transparent resize-none outline-none text-neutral-200 text-sm placeholder-neutral-600"
+              className="w-full max-h-32 min-h-[44px] py-3 pl-4 pr-2 bg-transparent resize-none outline-none text-neutral-200 text-sm placeholder-neutral-600 overflow-hidden"
               disabled={cargando}
               rows={1}
             />
