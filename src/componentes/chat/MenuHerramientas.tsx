@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wrench, Activity, FileText, Download, BarChart2, Plus } from 'lucide-react';
+import { Plus, FileSpreadsheet, FileText } from 'lucide-react';
 import { usarHerramientas } from '../../hooks/usarHerramientas';
 import ModalHerramientas from '../ui/ModalHerramientas';
 
 interface Props {
-  asinActual?: string; // 🆕 Producto sobre el que va el chat actual
+  asinActual?: string; // Producto sobre el que va el chat actual
 }
 
 export default function MenuHerramientas({ asinActual }: Props) {
@@ -15,7 +15,8 @@ export default function MenuHerramientas({ asinActual }: Props) {
     cargandoTool,
     datosModal,
     cerrarModal,
-    reportes, limpiarCache, exportarCsv
+    exportarExcel,
+    exportarPdf // 🚀 Importamos la nueva función del hook
   } = usarHerramientas();
 
   useEffect(() => {
@@ -28,9 +29,27 @@ export default function MenuHerramientas({ asinActual }: Props) {
     return () => document.removeEventListener('mousedown', manejarClicFuera);
   }, []);
 
-  const itemsMenu: { nombre: string; icono: React.ElementType; accion: () => void; peligro?: boolean }[] = [
+  // 🟢 HERRAMIENTAS ACTIVAS: EXCEL Y PDF EJECUTIVO
+  const itemsMenu: { nombre: string; icono: React.ElementType; accion: () => void; colorIcono?: string; peligro?: boolean }[] = [
+    {
+      nombre: 'Exportar a Excel (.xlsx)',
+      icono: FileSpreadsheet,
+      accion: () => exportarExcel(asinActual),
+      colorIcono: 'text-emerald-500'
+    },
+    {
+      nombre: 'Resumen Ejecutivo (.pdf)',
+      icono: FileText,
+      accion: () => exportarPdf(asinActual),
+      colorIcono: 'text-red-500'
+    },
+    /* ========================================================================
+    HERRAMIENTAS PAUSADAS TEMPORALMENTE (SE REACTIVARÁN DESPUÉS)
+    ========================================================================
     { nombre: 'Listar Reportes', icono: FileText, accion: reportes },
-    { nombre: 'Exportar CSV', icono: Download, accion: () => exportarCsv(asinActual) },
+    { nombre: 'Limpiar Caché', icono: Wrench, accion: limpiarCache, peligro: true },
+    ======================================================================== 
+    */
   ];
 
   return (
@@ -42,7 +61,7 @@ export default function MenuHerramientas({ asinActual }: Props) {
         className={`p-3 rounded-full transition-all flex items-center justify-center shrink-0 border ${abierto
           ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/30'
           : 'bg-[#202020] text-neutral-400 border-neutral-800 hover:bg-[#2a2a2a] hover:text-neutral-200'
-          } shadow-md`}
+          } shadow-md disabled:opacity-50`}
         title="Herramientas del Sistema"
       >
         {cargandoTool ? (
@@ -68,10 +87,10 @@ export default function MenuHerramientas({ asinActual }: Props) {
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${item.peligro
                   ? 'text-red-400 hover:bg-red-950/20'
-                  : 'text-neutral-300 hover:bg-neutral-800/50 hover:text-indigo-400'
+                  : 'text-neutral-300 hover:bg-neutral-800/50 hover:text-neutral-100'
                   }`}
               >
-                <item.icono size={16} className={item.peligro ? 'text-red-400' : 'text-neutral-400 group-hover:text-indigo-400'} />
+                <item.icono size={16} className={item.peligro ? 'text-red-400' : (item.colorIcono || 'text-indigo-400')} />
                 <span>{item.nombre}</span>
               </button>
             ))}
@@ -79,14 +98,13 @@ export default function MenuHerramientas({ asinActual }: Props) {
         </div>
       )}
 
-      {/* 📊 DIBUJAR EL MODAL SOLO SI ES ESTRICTAMENTE REQUERIDO */}
+      {/* 📊 DIBUJAR EL MODAL SOLO SI HAY UN MENSAJE DE ERROR O ADVERTENCIA */}
       {datosModal && (
         <ModalHerramientas
           datos={datosModal}
           alCerrar={cerrarModal}
         />
       )}
-
     </div>
   );
 }

@@ -1,7 +1,9 @@
-import { X, CheckCircle, Download } from 'lucide-react';
+import { X, CheckCircle, AlertCircle } from 'lucide-react';
 import type { DatosModal } from '../../hooks/usarHerramientas';
-import { DiagnosticoView } from './vistas/DiagnosticoView';
-import { MetricasView } from './vistas/MetricasView';
+
+// Vistas secundarias comentadas temporalmente
+// import { DiagnosticoView } from './vistas/DiagnosticoView';
+// import { MetricasView } from './vistas/MetricasView';
 
 interface ModalHerramientasProps {
   datos: DatosModal;
@@ -12,11 +14,26 @@ export default function ModalHerramientas({ datos, alCerrar }: ModalHerramientas
 
   // 1. ESTA FUNCIÓN DECIDE QUÉ VISTA USAR
   const renderizarCuerpo = () => {
-    // 🔍 DEPURACIÓN: Esto te dirá en la consola del navegador qué está pasando
+    // 🔍 DEPURACIÓN
     console.log("Tipo recibido:", datos.tipo);
     console.log("Contenido recibido:", datos.contenido);
 
-    // Si el tipo es 'diagnostico', forzamos la vista profesional
+    // 🚀 CONTROL CRÍTICO DE ERRORES (ej. si el backend avisa que no hay reseñas para exportar a Excel)
+    if (datos.contenido?.error) {
+      return (
+        <div className="p-4 bg-red-950/40 border border-red-900/60 text-red-400 rounded-xl flex gap-2.5 items-start">
+          <AlertCircle size={16} className="shrink-0 mt-0.5" />
+          <div className="text-xs font-sans leading-relaxed">
+            <strong className="block font-semibold mb-0.5 text-neutral-200">Operación interrumpida</strong>
+            {datos.contenido.error}
+          </div>
+        </div>
+      );
+    }
+
+    /* ========================================================================
+       VISTAS DESACTIVADAS TEMPORALMENTE
+       ========================================================================
     if (datos.tipo === 'diagnostico') {
       return <DiagnosticoView data={datos.contenido} />;
     }
@@ -24,9 +41,10 @@ export default function ModalHerramientas({ datos, alCerrar }: ModalHerramientas
     if (datos.tipo === 'metricas') {
       return <MetricasView data={datos.contenido} />;
     }
+    ======================================================================== */
 
-    // Si es otro tipo (o no tiene tipo), usamos el genérico
-    if (datos.contenido.mensaje) {
+    // Si trae un mensaje explicativo simple en texto
+    if (datos.contenido && datos.contenido.mensaje) {
       return (
         <div className="bg-[#181818] p-4 rounded-lg border border-neutral-800 text-sm text-neutral-300 whitespace-pre-wrap font-mono">
           {datos.contenido.mensaje}
@@ -34,10 +52,11 @@ export default function ModalHerramientas({ datos, alCerrar }: ModalHerramientas
       );
     }
 
-    // Diseño genérico (Lista de propiedades)
+    // Vista genérica por defecto para objetos/propiedades
+    const cuerpoObjeto = datos.contenido || {};
     return (
       <div className="space-y-3">
-        {Object.entries(datos.contenido).map(([clave, valor], indice) => (
+        {Object.entries(cuerpoObjeto).map(([clave, valor], indice) => (
           <div key={indice} className="bg-[#202020] p-3 rounded-lg border border-neutral-800">
             <span className="block text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">
               {clave.replace(/_/g, ' ')}
@@ -51,22 +70,29 @@ export default function ModalHerramientas({ datos, alCerrar }: ModalHerramientas
     );
   };
 
+  const esError = !!datos.contenido?.error;
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#1e1e1e] border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-lg">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+      <div className="bg-[#1e1e1e] border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+
         {/* Cabecera */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-[#1a1a1a]">
           <div className="flex items-center gap-2">
-            <CheckCircle className="text-emerald-400" size={18} />
-            <h3 className="text-md font-bold text-neutral-200">{datos.titulo}</h3>
+            {esError ? (
+              <AlertCircle className="text-red-400" size={18} />
+            ) : (
+              <CheckCircle className="text-emerald-400" size={18} />
+            )}
+            <h3 className="text-sm font-bold text-neutral-200">{datos.titulo}</h3>
           </div>
           <button onClick={alCerrar} className="text-neutral-500 hover:text-neutral-300 p-1.5 transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        {/* Cuerpo (Aquí entra tu diseño profesional) */}
-        <div className="p-6 bg-[#141414]">
+        {/* Cuerpo */}
+        <div className="p-6 bg-[#141414] max-h-[60vh] overflow-y-auto">
           {renderizarCuerpo()}
         </div>
 

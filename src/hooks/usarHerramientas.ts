@@ -5,56 +5,62 @@ import { apiHerramientas } from '../servicios/apiHerramientas';
 export interface DatosModal {
   titulo: string;
   contenido: any;
-  tipo: 'diagnostico' | 'reportes' | 'metricas' | 'default'; // Agregamos 'tipo'
+  tipo: 'preguntas' | 'default';
 }
 
 export const usarHerramientas = () => {
   const [cargandoTool, setCargandoTool] = useState(false);
   const [datosModal, setDatosModal] = useState<DatosModal | null>(null);
 
-  // Mantenemos tu función original para las demás herramientas
+  // Auxiliar reusable para ejecutar acciones tipo Modal
+  /*
   const ejecutar = async (nombre: string, accion: () => Promise<any>, tipo: DatosModal['tipo'] = 'default') => {
     setCargandoTool(true);
     try {
       const resultado = await accion();
-      // Abrimos el Modal con los datos y el tipo
       setDatosModal({ titulo: nombre, contenido: resultado, tipo });
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error al ejecutar ${nombre}:`, error);
-      // CORRECCIÓN: Aquí ponemos un mensaje de error fijo, no 'resultado'
-      setDatosModal({ 
-        titulo: `Error: ${nombre}`, 
-        contenido: { error: 'Hubo un problema de comunicación con el servidor.' },
-        tipo: 'default' 
+      setDatosModal({
+        titulo: `Error: ${nombre}`,
+        contenido: { error: error.message || 'Hubo un problema de comunicación con el servidor.' },
+        tipo: 'default'
       });
     } finally {
       setCargandoTool(false);
     }
   };
+  */
 
-  const manejarExportarCsv = async (asin?: string) => {
-    // 🆕 Sin producto seleccionado no hay nada que exportar (antes esto llamaba a un
-    // endpoint que ni siquiera existe en el backend: /api/herramientas/exportar-csv)
-    if (!asin) {
+  // 🟢 1. DESCARGA DEL REPORTE COMPLETO EN EXCEL (.xlsx)
+  const manejarExportarExcel = async (asin?: string) => {
+    const asinLimpio = asin?.trim();
+
+    if (!asinLimpio) {
       setDatosModal({
-        titulo: 'Exportar CSV',
-        contenido: { error: 'Abre un chat sobre un producto (o elige uno en "Chat nuevo") para poder exportar su CSV.' },
+        titulo: 'Exportar Excel',
+        contenido: { error: 'Abre un chat o selecciona un producto para exportar sus reseñas a Excel.' },
         tipo: 'default'
       });
       return;
     }
 
-    setCargandoTool(true); // Encendemos el loader
+    setCargandoTool(true);
     try {
-      // apiHerramientas.exportarCsv(asin) pega a POST /api/metricas/exportar-csv/{asin}
-      // y ya devuelve el Blob (fetchHerramienta detecta el content-type text/csv)
-      const blob: Blob = await apiHerramientas.exportarCsv(asin);
+      // Llamamos a apiHerramientas.exportarExcel() que regresa el Blob de openpyxl
+      const blob: Blob = await apiHerramientas.exportarExcel(asinLimpio);
+
+      // Si el backend envió un JSON de error en lugar del archivo binario
+      if (blob.type && blob.type.includes('application/json')) {
+        const textoError = await blob.text();
+        const jsonError = JSON.parse(textoError);
+        throw new Error(jsonError.detail || jsonError.error || 'No se pudo generar el archivo Excel.');
+      }
 
       const urlArchivo = window.URL.createObjectURL(blob);
       const enlace = document.createElement('a');
       enlace.href = urlArchivo;
-      enlace.setAttribute('download', `Analisis_Resenas_${asin}.csv`);
+      enlace.setAttribute('download', `Reporte_Resenas_${asinLimpio.toUpperCase()}.xlsx`);
 
       document.body.appendChild(enlace);
       enlace.click();
@@ -62,16 +68,85 @@ export const usarHerramientas = () => {
       enlace.parentNode?.removeChild(enlace);
       window.URL.revokeObjectURL(urlArchivo);
     } catch (error: any) {
-      console.error(`Error al exportar CSV:`, error);
-      setDatosModal({ 
-        titulo: `Error: Exportar CSV`, 
-        contenido: { error: error.message || 'No se pudo descargar el archivo CSV.' },
+      console.error(`Error al exportar Excel:`, error);
+      setDatosModal({
+        titulo: `Error: Exportar Excel`,
+        contenido: { error: error.message || 'No se pudo descargar el archivo Excel.' },
         tipo: 'default'
       });
     } finally {
-      setCargandoTool(false); // Apagamos el loader
+      setCargandoTool(false);
     }
   };
+
+  // 🔴 2. DESCARGA DEL RESUMEN EJECUTIVO EN PDF (.pdf) [¡AHORA ACTIVO!]
+  const manejarExportarPdf = async (asin?: string) => {
+    const asinLimpio = asin?.trim();
+
+    if (!asinLimpio) {
+      setDatosModal({
+        titulo: 'Exportar PDF',
+        contenido: { error: 'Selecciona un producto activo para generar su resumen ejecutivo en PDF.' },
+        tipo: 'default'
+      });
+      return;
+    }
+
+    setCargandoTool(true);
+    try {
+      const blob: Blob = await apiHerramientas.exportarPdf(asinLimpio);
+
+      if (blob.type && blob.type.includes('application/json')) {
+        const textoError = await blob.text();
+        const jsonError = JSON.parse(textoError);
+        throw new Error(jsonError.detail || jsonError.error || 'No se pudo generar el documento PDF.');
+      }
+
+      const urlArchivo = window.URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = urlArchivo;
+      enlace.setAttribute('download', `Resumen_Ejecutivo_${asinLimpio.toUpperCase()}.pdf`);
+
+      document.body.appendChild(enlace);
+      enlace.click();
+
+      enlace.parentNode?.removeChild(enlace);
+      window.URL.revokeObjectURL(urlArchivo);
+    } catch (error: any) {
+      console.error(`Error al exportar PDF:`, error);
+      setDatosModal({
+        titulo: `Error: Exportar PDF`,
+        contenido: { error: error.message || 'No se pudo descargar el reporte PDF.' },
+        tipo: 'default'
+      });
+    } finally {
+      setCargandoTool(false);
+    }
+  };
+
+  /* ========================================================================
+     HERRAMIENTAS PAUSADAS TEMPORALMENTE (SE REACTIVARÁN DESPUÉS)
+     ========================================================================
+  // 💡 3. PREGUNTAS SUGERIDAS PARA INYECTAR AL CHAT RAG
+  const manejarPreguntasSugeridas = async (asin?: string) => {
+    const asinLimpio = asin?.trim();
+
+    if (!asinLimpio) {
+      setDatosModal({
+        titulo: 'Preguntas Sugeridas',
+        contenido: { error: 'Abre un producto para calcular sus preguntas frecuentes.' },
+        tipo: 'default'
+      });
+      return;
+    }
+
+    await ejecutar(
+      `Preguntas Sugeridas (${asinLimpio.toUpperCase()})`,
+      () => apiHerramientas.obtenerSugerenciasPreguntas(asinLimpio),
+      'preguntas'
+    );
+  };
+  ======================================================================== */
 
   const cerrarModal = () => setDatosModal(null);
 
@@ -79,10 +154,8 @@ export const usarHerramientas = () => {
     cargandoTool,
     datosModal,
     cerrarModal,
-    diagnostico: () => ejecutar('Diagnóstico', apiHerramientas.diagnostico, 'diagnostico'),
-    reportes: () => ejecutar('Listar Reportes', apiHerramientas.reportes),
-    limpiarCache: () => ejecutar('Limpiar Caché', apiHerramientas.limpiarCache),
-    exportarCsv: manejarExportarCsv, 
-    metricasUltima: () => ejecutar('Última Métrica de Rendimiento', apiHerramientas.metricasUltima, 'metricas'),
+    exportarExcel: manejarExportarExcel,
+    exportarPdf: manejarExportarPdf, // 🚀 Activado en el retorno
+    // preguntasSugeridas: manejarPreguntasSugeridas,
   };
 };
