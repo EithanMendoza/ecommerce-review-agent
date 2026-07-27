@@ -156,7 +156,7 @@ export const usarHerramientas = () => {
     cerrarModal,
     exportarExcel: manejarExportarExcel,
     exportarPdf: manejarExportarPdf,
-    diagnostico: () => ejecutar('Diagnóstico del Sistema', apiHerramientas.diagnostico, 'default'),
+    diagnostico: () => ejecutar('Diagnóstico del Sistema', apiHerramientas.diagnostico, 'diagnostico'),
     // 🚀 Activado en el retorno
     // preguntasSugeridas: manejarPreguntasSugeridas,
 

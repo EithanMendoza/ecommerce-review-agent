@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ModalCargarProducto from '../ui/ModalCargarProducto';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Menu, PlusCircle, MessageSquare, Trash2, Settings, Info } from 'lucide-react';
+import { LayoutDashboard, Menu, X, PlusCircle, MessageSquare, Trash2, Settings, Info } from 'lucide-react';
 import { apiLocal } from '../../servicios/apiLocal';
 import type { SesionChat } from '../../tipos/contratos';
 import { usarHerramientas } from '../../hooks/usarHerramientas';
@@ -20,6 +20,9 @@ export default function EnvolturaAdmin() {
 
   const [mostrarModalProducto, setMostrarModalProducto] = useState(false);
   const [mostrarModalAjustes, setMostrarModalAjustes] = useState(false);
+
+  // 🆕 Estado para controlar la visibilidad del sidebar en móvil
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
 
   const { diagnostico, datosModal, cerrarModal, cargandoTool } = usarHerramientas();
 
@@ -50,8 +53,10 @@ export default function EnvolturaAdmin() {
     }
   };
 
-  const onProductoCargado = () => {
-    cargarHistorial();
+  const onProductoCargado = (sesionId: string) => {
+    cargarHistorial();          // refresca el historial del sidebar
+    setMostrarModalAjustes(false); // 👈 cierra Ajustes si estaba abierto detrás
+    navigate(`/chat/${sesionId}`); // 👈 te manda directo al chat de esa sesión
   };
 
   const cargarHistorial = async () => {
@@ -97,6 +102,11 @@ export default function EnvolturaAdmin() {
     cargarHistorial();
   }, [ubicacion.pathname]);
 
+  // 🆕 Cierra el menú móvil automáticamente al navegar a otra ruta
+  useEffect(() => {
+    setMenuMovilAbierto(false);
+  }, [ubicacion.pathname]);
+
   const manejarEliminacion = (e: React.MouseEvent, sesionId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -132,7 +142,7 @@ export default function EnvolturaAdmin() {
   const manejarNuevoChat = async () => {
     try {
       const respuesta = await apiHerramientas.obtenerUltimoAsin();
-      
+
       if (respuesta && respuesta.asin) {
         // Navegamos al chat limpio. Tu hook se encargará de asociarlo al último producto.
         navigate('/chat');
@@ -145,13 +155,38 @@ export default function EnvolturaAdmin() {
   return (
     <div className="flex h-screen bg-[#121212] text-slate-100 select-none">
 
+      {/* 🆕 OVERLAY para cerrar el menú al tocar fuera (solo visible en móvil cuando está abierto) */}
+      {menuMovilAbierto && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          onClick={() => setMenuMovilAbierto(false)}
+        />
+      )}
+
       {/* 💻 SIDEBAR IZQUIERDO */}
-      <aside className="w-64 bg-[#121212] border-r border-neutral-900 flex flex-col hidden md:flex">
+      {/*
+        🆕 Antes: "hidden md:flex" ocultaba el sidebar por completo en móvil sin forma de mostrarlo.
+        Ahora: en móvil se posiciona fixed y se desliza dentro/fuera de la pantalla según el estado.
+        En escritorio (md:) se comporta igual que antes, siempre visible y estático.
+      */}
+      <aside
+        className={`fixed md:static top-0 left-0 h-full w-64 bg-[#121212] border-r border-neutral-900 flex flex-col z-50
+        transform transition-transform duration-300 ease-in-out
+        ${menuMovilAbierto ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      >
         {/* Header del Sidebar */}
-        <div className="h-16 flex items-center px-6 border-b border-neutral-900 shrink-0">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-neutral-900 shrink-0">
           <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-indigo-600 bg-clip-text text-transparent">
             Sistema RAG
           </span>
+
+          {/* 🆕 Botón para cerrar el menú, visible solo en móvil */}
+          <button
+            onClick={() => setMenuMovilAbierto(false)}
+            className="md:hidden text-neutral-400 hover:text-neutral-200 transition-colors"
+          >
+            <X size={22} />
+          </button>
         </div>
 
         {/* Enlaces Principales */}
@@ -268,7 +303,11 @@ export default function EnvolturaAdmin() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Superior del Chat */}
         <header className="h-16 bg-[#121212] border-b border-neutral-900 flex items-center px-6 justify-between shrink-0">
-          <button className="md:hidden text-neutral-400 hover:text-neutral-200 transition-colors">
+          {/* 🆕 Ahora el botón realmente abre el menú móvil */}
+          <button
+            onClick={() => setMenuMovilAbierto(true)}
+            className="md:hidden text-neutral-400 hover:text-neutral-200 transition-colors"
+          >
             <Menu size={24} />
           </button>
 
@@ -329,10 +368,6 @@ export default function EnvolturaAdmin() {
         onCancel={() => setChatAEliminar(null)}
         onConfirm={confirmarEliminacionChat}
       />
-
-
-
-
 
     </div>
   );

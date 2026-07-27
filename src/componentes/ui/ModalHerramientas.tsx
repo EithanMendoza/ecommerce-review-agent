@@ -1,8 +1,8 @@
 import { X, CheckCircle, AlertCircle } from 'lucide-react';
 import type { DatosModal } from '../../hooks/usarHerramientas';
 
-// Vistas secundarias comentadas temporalmente
-// import { DiagnosticoView } from './vistas/DiagnosticoView';
+// Vistas secundarias
+import { DiagnosticoView } from './vistas/DiagnosticoView';
 // import { MetricasView } from './vistas/MetricasView';
 
 interface ModalHerramientasProps {
@@ -31,13 +31,14 @@ export default function ModalHerramientas({ datos, alCerrar }: ModalHerramientas
       );
     }
 
-    /* ========================================================================
-       VISTAS DESACTIVADAS TEMPORALMENTE
-       ========================================================================
+    // 🚀 Reactivado: vista especializada de diagnóstico (TTFT, latencia, velocidad)
     if (datos.tipo === 'diagnostico') {
       return <DiagnosticoView data={datos.contenido} />;
     }
 
+    /* ========================================================================
+       VISTA DE MÉTRICAS AÚN DESACTIVADA TEMPORALMENTE
+       ========================================================================
     if (datos.tipo === 'metricas') {
       return <MetricasView data={datos.contenido} />;
     }
