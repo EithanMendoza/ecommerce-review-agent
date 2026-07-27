@@ -56,7 +56,7 @@ export default function EnvolturaAdmin() {
   const onProductoCargado = (sesionId: string) => {
     cargarHistorial();          // refresca el historial del sidebar
     setMostrarModalAjustes(false); // 👈 cierra Ajustes si estaba abierto detrás
-    navigate(`/chat/${sesionId}`); // 👈 te manda directo al chat de esa sesión
+    navigate(`/chat/${sesionId}`, { state: { desdeApp: true } }); // 👈 te manda directo al chat de esa sesión
   };
 
   const cargarHistorial = async () => {
@@ -235,6 +235,7 @@ export default function EnvolturaAdmin() {
                   <Link
                     key={sesion.id}
                     to={rutaSesion}
+                    state={{ desdeApp: true }}
                     className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-all text-sm ${activo
                       ? 'bg-[#222222] text-slate-100 border border-neutral-800 font-medium'
                       : 'text-neutral-400 hover:bg-[#1c1c1c] hover:text-neutral-200'
@@ -249,7 +250,7 @@ export default function EnvolturaAdmin() {
 
                     <button
                       onClick={(e) => manejarEliminacion(e, sesion.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-neutral-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-all shrink-0"
+                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 text-neutral-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-all shrink-0"
                       title="Eliminar chat"
                     >
                       <Trash2 size={14} />

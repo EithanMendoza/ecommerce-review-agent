@@ -1,11 +1,15 @@
 import { useEffect, useState, useRef } from 'react';
 
 export default function OndasVoz() {
-    // 75 barras delgaditas y pegadas para el flujo continuo
-    const TOTAL_BARRAS = 75;
+    // 🆕 En pantallas angostas (móvil) usamos menos barras para que quepan
+    // completas en el contenedor; en escritorio se mantienen las 75 originales.
+    const obtenerTotalBarras = () =>
+        typeof window !== 'undefined' && window.innerWidth < 640 ? 36 : 75;
+
+    const [totalBarras, setTotalBarras] = useState(obtenerTotalBarras);
 
     const [historialOndas, setHistorialOndas] = useState<number[]>(
-        new Array(TOTAL_BARRAS).fill(1)
+        new Array(totalBarras).fill(1)
     );
 
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -75,11 +79,26 @@ export default function OndasVoz() {
         };
     }, []);
 
+    // 🆕 Si cambia el tamaño de pantalla (ej. rotar el celular o redimensionar la ventana),
+    // ajustamos la cantidad de barras y reiniciamos el historial a ese nuevo tamaño.
+    useEffect(() => {
+        const manejarResize = () => {
+            const nuevoTotal = obtenerTotalBarras();
+            setTotalBarras((prev) => {
+                if (prev === nuevoTotal) return prev;
+                setHistorialOndas(new Array(nuevoTotal).fill(1));
+                return nuevoTotal;
+            });
+        };
+        window.addEventListener('resize', manejarResize);
+        return () => window.removeEventListener('resize', manejarResize);
+    }, []);
+
     return (
         <div className="flex-1 flex items-center justify-center gap-[2px] w-full h-8 px-2 overflow-hidden select-none">
             {historialOndas.map((escalaY, index) => {
                 // Atenuación en los extremos izquierdo y derecho para un acabado redondeado y limpio
-                const factorExtremo = index < 6 ? index * 0.16 : index > TOTAL_BARRAS - 7 ? (TOTAL_BARRAS - 1 - index) * 0.16 : 1;
+                const factorExtremo = index < 6 ? index * 0.16 : index > totalBarras - 7 ? (totalBarras - 1 - index) * 0.16 : 1;
                 const alturaFinal = 1 + (escalaY - 1) * factorExtremo;
 
                 return (
