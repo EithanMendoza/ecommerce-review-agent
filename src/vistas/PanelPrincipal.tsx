@@ -94,16 +94,27 @@ export default function PanelPrincipal() {
   const cambiarProducto = async (nuevoAsin: string) => {
     if (!nuevoAsin || nuevoAsin === asinSeleccionado) return;
 
+    // 1. Iniciamos el estado de carga y borramos datos previos temporalmente
     setAsinSeleccionado(nuevoAsin);
     setCargandoMetricas(true);
     setVerCompleta(false);
-
+    
+    // Opcional: setDatos(null) para obligar a que se vea el cambio visualmente
+    
     try {
+      // 2. Solicitamos las nuevas métricas al backend pasando el ASIN
       const nuevasMetricas = await apiHerramientas.metricasResumen(nuevoAsin);
+      
+      // 3. Verificamos qué está llegando en consola
+      console.log("Nuevas métricas recibidas para", nuevoAsin, ":", nuevasMetricas);
+      
+      // 4. Actualizamos el estado con los nuevos datos
       setDatos(nuevasMetricas);
     } catch (err) {
       console.error("Error al cambiar las métricas del producto:", err);
+      // Aquí podrías mostrar un toast o mensaje de error al usuario
     } finally {
+      // 5. Quitamos el estado de carga
       setCargandoMetricas(false);
     }
   };
