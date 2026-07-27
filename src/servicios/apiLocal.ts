@@ -2,7 +2,7 @@ import type { ResenaRecuperada, SesionChat, MensajeHistorial, ProductoAnalizado,
 import { apiAuth } from '../servicios/apiAuth';
 
 // Ajusta el puerto si tu Uvicorn de Python está corriendo en uno distinto
-const URL_BASE = 'http://localhost:8000';
+const URL_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const apiLocal = {
   /**

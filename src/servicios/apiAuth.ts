@@ -1,11 +1,11 @@
-import type { 
-  CredencialesLogin, 
-  DatosRegistro, 
-  RespuestaToken, 
-  RespuestaRegistro 
+import type {
+  CredencialesLogin,
+  DatosRegistro,
+  RespuestaToken,
+  RespuestaRegistro
 } from '../tipos/auth';
 
-const URL_BASE = 'http://localhost:8000';
+const URL_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const apiAuth = {
   iniciarSesion: async (credenciales: CredencialesLogin): Promise<RespuestaToken> => {
@@ -33,7 +33,7 @@ export const apiAuth = {
   },
 
   registrarUsuario: async (datosRegistro: DatosRegistro): Promise<RespuestaRegistro> => {
-    const respuesta = await fetch(`${URL_BASE}/api/auth/registro`, { 
+    const respuesta = await fetch(`${URL_BASE}/api/auth/registro`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

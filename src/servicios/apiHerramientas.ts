@@ -1,6 +1,6 @@
 import { apiAuth } from './apiAuth';
 
-const URL_BASE = 'http://localhost:8000';
+const URL_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Función auxiliar para no repetir la inyección del token
 const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) => {
