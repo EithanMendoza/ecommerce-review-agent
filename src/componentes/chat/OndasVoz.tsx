@@ -4,7 +4,7 @@ export default function OndasVoz() {
     // 🆕 En pantallas angostas (móvil) usamos menos barras para que quepan
     // completas en el contenedor; en escritorio se mantienen las 75 originales.
     const obtenerTotalBarras = () =>
-        typeof window !== 'undefined' && window.innerWidth < 640 ? 36 : 75;
+        typeof window !== 'undefined' && window.innerWidth < 640 ? 26 : 75;
 
     const [totalBarras, setTotalBarras] = useState(obtenerTotalBarras);
 
@@ -95,24 +95,36 @@ export default function OndasVoz() {
     }, []);
 
     return (
-        <div className="flex-1 flex items-center justify-center gap-[2px] w-full h-8 px-2 overflow-hidden select-none">
-            {historialOndas.map((escalaY, index) => {
-                // Atenuación en los extremos izquierdo y derecho para un acabado redondeado y limpio
-                const factorExtremo = index < 6 ? index * 0.16 : index > totalBarras - 7 ? (totalBarras - 1 - index) * 0.16 : 1;
-                const alturaFinal = 1 + (escalaY - 1) * factorExtremo;
+        <div className="flex-1 flex items-center justify-center sm:justify-start gap-2 sm:gap-3 w-full h-8 px-2 select-none">
+            {/* Etiqueta "Escuchando" con puntito animado, visible tanto en móvil como en escritorio */}
+            <span className="flex items-center gap-1.5 shrink-0 text-[10px] sm:text-[11px] font-semibold text-indigo-300 uppercase tracking-wider">
+                <span className="relative flex w-1.5 h-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-400"></span>
+                </span>
+                Escuchando
+            </span>
 
-                return (
-                    <div
-                        key={index}
-                        className="flex-1 min-w-[2px] h-1.5 rounded-full transition-all duration-75 origin-center shrink-0"
-                        style={{
-                            transform: `scaleY(${alturaFinal})`,
-                            // Si la barra se levanta, cambia a un tono índigo claro, si está en silencio se integra al fondo oscuro
-                            backgroundColor: alturaFinal > 1.3 ? '#a5b4fc' : '#525252'
-                        }}
-                    />
-                );
-            })}
+            {/* Ondas: ocultas en móvil, visibles desde sm hacia arriba */}
+            <div className="hidden sm:flex flex-1 items-center justify-center gap-[2px] h-8 overflow-hidden">
+                {historialOndas.map((escalaY, index) => {
+                    // Atenuación en los extremos izquierdo y derecho para un acabado redondeado y limpio
+                    const factorExtremo = index < 6 ? index * 0.16 : index > totalBarras - 7 ? (totalBarras - 1 - index) * 0.16 : 1;
+                    const alturaFinal = 1 + (escalaY - 1) * factorExtremo;
+
+                    return (
+                        <div
+                            key={index}
+                            className="flex-1 min-w-[2px] h-1.5 rounded-full transition-all duration-75 origin-center shrink-0"
+                            style={{
+                                transform: `scaleY(${alturaFinal})`,
+                                // Si la barra se levanta, cambia a un tono índigo claro, si está en silencio se integra al fondo oscuro
+                                backgroundColor: alturaFinal > 1.3 ? '#a5b4fc' : '#525252'
+                            }}
+                        />
+                    );
+                })}
+            </div>
         </div>
     );
 }
