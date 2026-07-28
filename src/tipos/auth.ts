@@ -1,13 +1,13 @@
 export interface CredencialesLogin {
-  correo: string;
-  contrasena: string;
+  email: string;
+  password: string;
 }
 
 export interface DatosRegistro {
-  nombre: string;
-  apellido: string;
-  correo: string;
-  contrasena: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
 }
 
 export interface RespuestaToken {
@@ -17,10 +17,10 @@ export interface RespuestaToken {
 
 export interface RespuestaRegistro {
   mensaje: string;
-  id: string; // O number, según lo que devuelva tu SQLite
+  id: string; // O number, según lo que devuelva tu SQLite/PostgreSQL
 }
 
 export interface UsuarioActual {
   id: string;
-  correo: string;
+  email: string;
 }

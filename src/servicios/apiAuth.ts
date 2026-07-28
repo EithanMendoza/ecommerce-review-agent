@@ -9,10 +9,10 @@ const URL_BASE = import.meta.env.VITE_API_URL || '';
 
 export const apiAuth = {
   iniciarSesion: async (credenciales: CredencialesLogin): Promise<RespuestaToken> => {
-    // FastAPI usualmente usa form-data para el login con OAuth2PasswordRequestForm
+    // FastAPI (OAuth2PasswordRequestForm) exige las llaves 'username' y 'password'
     const formData = new URLSearchParams();
-    formData.append('username', credenciales.correo);
-    formData.append('password', credenciales.contrasena);
+    formData.append('username', credenciales.email); 
+    formData.append('password', credenciales.password);
 
     const respuesta = await fetch(`${URL_BASE}/api/auth/login`, {
       method: 'POST',
@@ -38,8 +38,13 @@ export const apiAuth = {
       headers: {
         'Content-Type': 'application/json',
       },
-      // Pasamos el objeto completo que ya incluye nombre, apellido, correo y contrasena
-      body: JSON.stringify(datosRegistro),
+      // Unificamos el payload al inglés para hacer match con el login
+      body: JSON.stringify({
+        first_name: datosRegistro.firstName,
+        last_name: datosRegistro.lastName,
+        email: datosRegistro.email,
+        password: datosRegistro.password
+      }),
     });
 
     if (!respuesta.ok) {

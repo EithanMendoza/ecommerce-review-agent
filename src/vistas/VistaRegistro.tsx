@@ -4,10 +4,11 @@ import { Mail, Lock, User, UserPlus, AlertCircle, CheckCircle } from 'lucide-rea
 import { apiAuth } from '../servicios/apiAuth';
 
 export default function VistaRegistro() {
-  const [nombre, setNombre] = useState('');
-  const [apellido, setApellido] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
+  // 🔄 CAMBIO: Variables unificadas al inglés
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
@@ -22,12 +23,11 @@ export default function VistaRegistro() {
     setCargando(true);
 
     try {
-      // FLUJO DE REGISTRO
-      await apiAuth.registrarUsuario({ nombre, apellido, correo, contrasena });
+      // 🔄 CAMBIO: Enviamos el payload estandarizado
+      await apiAuth.registrarUsuario({ firstName, lastName, email, password });
       setMensajeExito('Usuario creado exitosamente. Ya puedes iniciar sesión.');
-      setContrasena(''); // Limpiamos el password por seguridad
+      setPassword(''); // Limpiamos el password por seguridad
       
-      // Opcional: Redirigir automáticamente al login después de 2 segundos
       setTimeout(() => navigate('/login'), 2000);
       
     } catch (err: any) {
@@ -41,7 +41,6 @@ export default function VistaRegistro() {
     <div className="min-h-screen flex items-center justify-center bg-[#121212] px-4 select-none">
       <div className="max-w-md w-full bg-[#181818] rounded-2xl shadow-2xl border border-neutral-900 p-8 space-y-6">
         
-        {/* Cabecera */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 mb-2">
             <UserPlus size={22} />
@@ -50,7 +49,6 @@ export default function VistaRegistro() {
           <p className="text-sm text-neutral-500">Registra tus datos para acceder al sistema</p>
         </div>
 
-        {/* Mensajes de Error / Éxito */}
         {error && (
           <div className="flex items-start gap-2 p-3 bg-red-950/30 border border-red-900/40 rounded-lg text-red-400 text-sm">
             <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
@@ -64,10 +62,8 @@ export default function VistaRegistro() {
           </div>
         )}
 
-        {/* Formulario */}
         <form onSubmit={manejarEnvio} className="space-y-4">
           
-          {/* Campo Nombre */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-neutral-400">Nombre</label>
             <div className="relative">
@@ -76,8 +72,8 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                value={firstName} // 🔄 CAMBIO
+                onChange={(e) => setFirstName(e.target.value)}
                 required
                 disabled={cargando}
                 className="w-full pl-10 pr-4 py-2 bg-[#202020] border border-neutral-800 text-neutral-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all"
@@ -86,7 +82,6 @@ export default function VistaRegistro() {
             </div>
           </div>
 
-          {/* Campo Apellido */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-neutral-400">Apellido</label>
             <div className="relative">
@@ -95,8 +90,8 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="text"
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                value={lastName} // 🔄 CAMBIO
+                onChange={(e) => setLastName(e.target.value)}
                 required
                 disabled={cargando}
                 className="w-full pl-10 pr-4 py-2 bg-[#202020] border border-neutral-800 text-neutral-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all"
@@ -105,7 +100,6 @@ export default function VistaRegistro() {
             </div>
           </div>
 
-          {/* Campo Correo Electrónico */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-neutral-400">Correo Electrónico</label>
             <div className="relative">
@@ -114,8 +108,8 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="email"
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
+                value={email} // 🔄 CAMBIO
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={cargando}
                 className="w-full pl-10 pr-4 py-2 bg-[#202020] border border-neutral-800 text-neutral-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all"
@@ -124,7 +118,6 @@ export default function VistaRegistro() {
             </div>
           </div>
 
-          {/* Campo Contraseña */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-neutral-400">Contraseña</label>
             <div className="relative">
@@ -133,8 +126,8 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="password"
-                value={contrasena}
-                onChange={(e) => setContrasena(e.target.value)}
+                value={password} // 🔄 CAMBIO
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={cargando}
                 className="w-full pl-10 pr-4 py-2 bg-[#202020] border border-neutral-800 text-neutral-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all"
@@ -145,7 +138,7 @@ export default function VistaRegistro() {
 
           <button
             type="submit"
-            disabled={cargando || !nombre || !apellido || !correo || !contrasena}
+            disabled={cargando || !firstName || !lastName || !email || !password} // 🔄 CAMBIO
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-all disabled:opacity-40 mt-6 shadow-md shadow-indigo-950/40"
           >
             {cargando ? (
@@ -159,7 +152,6 @@ export default function VistaRegistro() {
           </button>
         </form>
 
-        {/* Botón para regresar al Login */}
         <div className="text-center mt-4">
           <button
             type="button"
