@@ -43,7 +43,8 @@ export const apiAuth = {
         first_name: datosRegistro.firstName,
         last_name: datosRegistro.lastName,
         email: datosRegistro.email,
-        password: datosRegistro.password
+        password: datosRegistro.password,
+        captcha_token: datosRegistro.captchaToken
       }),
     });
 

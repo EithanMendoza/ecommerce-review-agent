@@ -8,6 +8,7 @@ export interface DatosRegistro {
   lastName: string;
   email: string;
   password: string;
+  captchaToken: string; // 🚀 NUEVO: Token de validación de Turnstile
 }
 
 export interface RespuestaToken {

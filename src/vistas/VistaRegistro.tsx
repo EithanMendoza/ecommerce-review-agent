@@ -1,37 +1,56 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
+import { Turnstile } from '@marsidev/react-turnstile';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import { apiAuth } from '../servicios/apiAuth';
 
 export default function VistaRegistro() {
-  // 🔄 CAMBIO: Variables unificadas al inglés
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null); // 🚀 ESTADO DEL CAPTCHA
 
   const [error, setError] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
 
+  const turnstileRef = useRef<TurnstileInstance>(null); // 🚀 REFERENCIA PARA REINICIARLO
   const navigate = useNavigate();
 
   const manejarEnvio = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Doble validación por seguridad
+    if (!captchaToken) {
+      setError('Por favor, completa la verificación de seguridad.');
+      return;
+    }
+
     setError(null);
     setMensajeExito(null);
     setCargando(true);
 
     try {
-      // 🔄 CAMBIO: Enviamos el payload estandarizado
-      await apiAuth.registrarUsuario({ firstName, lastName, email, password });
+      await apiAuth.registrarUsuario({ 
+        firstName, 
+        lastName, 
+        email, 
+        password,
+        captchaToken // 🚀 SE ENVÍA EL TOKEN
+      });
+      
       setMensajeExito('Usuario creado exitosamente. Ya puedes iniciar sesión.');
-      setPassword(''); // Limpiamos el password por seguridad
+      setPassword(''); 
       
       setTimeout(() => navigate('/login'), 2000);
       
     } catch (err: any) {
       setError(err.message || 'Error al crear la cuenta.');
+      // 🚀 Si falla el registro (ej. correo duplicado), reiniciamos el CAPTCHA
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setCargando(false);
     }
@@ -72,7 +91,7 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="text"
-                value={firstName} // 🔄 CAMBIO
+                value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
                 disabled={cargando}
@@ -90,7 +109,7 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="text"
-                value={lastName} // 🔄 CAMBIO
+                value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
                 disabled={cargando}
@@ -108,7 +127,7 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="email"
-                value={email} // 🔄 CAMBIO
+                value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={cargando}
@@ -126,7 +145,7 @@ export default function VistaRegistro() {
               </div>
               <input
                 type="password"
-                value={password} // 🔄 CAMBIO
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={cargando}
@@ -136,9 +155,25 @@ export default function VistaRegistro() {
             </div>
           </div>
 
+          {/* 🚀 WIDGET DE CLOUDFLARE TURNSTILE */}
+          <div className="flex justify-center py-2">
+            <Turnstile
+              ref={turnstileRef}
+              siteKey="1x00000000000000000000AA" // Clave de prueba (Always Passes)
+              onSuccess={(token) => setCaptchaToken(token)}
+              onError={() => setError('Error al cargar la verificación de seguridad.')}
+              onExpire={() => setCaptchaToken(null)}
+              options={{
+                theme: 'dark', // Combina con tu interfaz
+                size: 'normal'
+              }}
+            />
+          </div>
+
           <button
             type="submit"
-            disabled={cargando || !firstName || !lastName || !email || !password} // 🔄 CAMBIO
+            // 🚀 EL BOTÓN SE BLOQUEA HASTA QUE SE RESUELVA EL CAPTCHA
+            disabled={cargando || !firstName || !lastName || !email || !password || !captchaToken} 
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-all disabled:opacity-40 mt-6 shadow-md shadow-indigo-950/40"
           >
             {cargando ? (
