@@ -2,6 +2,7 @@ import { apiAuth } from './apiAuth';
 
 const URL_BASE = import.meta.env.VITE_API_URL || '';
 
+
 // Función auxiliar para no repetir la inyección del token
 const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) => {
   const token = apiAuth.obtenerToken();

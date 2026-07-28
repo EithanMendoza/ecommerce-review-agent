@@ -1,3 +1,4 @@
+// src/hooks/usarHerramientas.ts
 import { useState } from 'react';
 import { apiHerramientas } from '../servicios/apiHerramientas';
 
@@ -13,7 +14,6 @@ export const usarHerramientas = () => {
   const [datosModal, setDatosModal] = useState<DatosModal | null>(null);
 
   // Auxiliar reusable para ejecutar acciones tipo Modal
-
   const ejecutar = async (nombre: string, accion: () => Promise<any>, tipo: DatosModal['tipo'] = 'default') => {
     setCargandoTool(true);
     try {
@@ -32,7 +32,7 @@ export const usarHerramientas = () => {
   };
 
 
-  // 🟢 1. DESCARGA DEL REPORTE COMPLETO EN EXCEL (.xlsx)
+
   const manejarExportarExcel = async (asin?: string) => {
     const asinLimpio = asin?.trim();
 
@@ -53,8 +53,14 @@ export const usarHerramientas = () => {
       // Si el backend envió un JSON de error en lugar del archivo binario
       if (blob.type && blob.type.includes('application/json')) {
         const textoError = await blob.text();
-        const jsonError = JSON.parse(textoError);
-        throw new Error(jsonError.detail || jsonError.error || 'No se pudo generar el archivo Excel.');
+        let mensajeError = 'No se pudo generar el archivo Excel.';
+        try {
+          const jsonError = JSON.parse(textoError);
+          mensajeError = jsonError.detail || jsonError.error || mensajeError;
+        } catch (e) {
+          // Si no es un JSON válido, dejamos el mensaje genérico por defecto
+        }
+        throw new Error(mensajeError);
       }
 
       const urlArchivo = window.URL.createObjectURL(blob);
@@ -79,7 +85,7 @@ export const usarHerramientas = () => {
     }
   };
 
-  // 🔴 2. DESCARGA DEL RESUMEN EJECUTIVO EN PDF (.pdf) [¡AHORA ACTIVO!]
+
   const manejarExportarPdf = async (asin?: string) => {
     const asinLimpio = asin?.trim();
 
@@ -98,8 +104,14 @@ export const usarHerramientas = () => {
 
       if (blob.type && blob.type.includes('application/json')) {
         const textoError = await blob.text();
-        const jsonError = JSON.parse(textoError);
-        throw new Error(jsonError.detail || jsonError.error || 'No se pudo generar el documento PDF.');
+        let mensajeError = 'No se pudo generar el documento PDF.';
+        try {
+          const jsonError = JSON.parse(textoError);
+          mensajeError = jsonError.detail || jsonError.error || mensajeError;
+        } catch (e) {
+          // Si no es un JSON válido, dejamos el mensaje genérico por defecto
+        }
+        throw new Error(mensajeError);
       }
 
       const urlArchivo = window.URL.createObjectURL(blob);
@@ -124,29 +136,6 @@ export const usarHerramientas = () => {
     }
   };
 
-  /* ========================================================================
-     HERRAMIENTAS PAUSADAS TEMPORALMENTE (SE REACTIVARÁN DESPUÉS)
-     ========================================================================
-  // 💡 3. PREGUNTAS SUGERIDAS PARA INYECTAR AL CHAT RAG
-  const manejarPreguntasSugeridas = async (asin?: string) => {
-    const asinLimpio = asin?.trim();
-
-    if (!asinLimpio) {
-      setDatosModal({
-        titulo: 'Preguntas Sugeridas',
-        contenido: { error: 'Abre un producto para calcular sus preguntas frecuentes.' },
-        tipo: 'default'
-      });
-      return;
-    }
-
-    await ejecutar(
-      `Preguntas Sugeridas (${asinLimpio.toUpperCase()})`,
-      () => apiHerramientas.obtenerSugerenciasPreguntas(asinLimpio),
-      'preguntas'
-    );
-  };
-  ======================================================================== */
 
   const cerrarModal = () => setDatosModal(null);
 
@@ -157,8 +146,6 @@ export const usarHerramientas = () => {
     exportarExcel: manejarExportarExcel,
     exportarPdf: manejarExportarPdf,
     diagnostico: () => ejecutar('Diagnóstico del Sistema', apiHerramientas.diagnostico, 'diagnostico'),
-    // 🚀 Activado en el retorno
-    // preguntasSugeridas: manejarPreguntasSugeridas,
 
   };
 };

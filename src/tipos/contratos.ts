@@ -24,8 +24,7 @@ export interface Mensaje {
 export interface SesionChat {
   id: string;
   usuario_id: string;
-  // Agrega otros campos que devuelva tu DB, por ejemplo:
-  titulo?: string; 
+  titulo?: string;
   fecha_creacion?: string;
 }
 
@@ -43,11 +42,25 @@ export interface MensajeHistorial {
   fecha_creacion?: string;
 }
 
-// 🆕 Respuesta completa de GET /sesiones/:id/mensajes (historial.py ya manda asin y titulo,
-// los necesitamos en el frontend para saber sobre qué producto va el chat actual)
+// 🆕 Respuesta completa de GET /sesiones/:id/mensajes
 export interface RespuestaHistorialChat {
   sesion_id: string;
   asin: string;
   titulo?: string;
   mensajes: MensajeHistorial[];
+}
+
+// 🚀 CONTRATOS AÑADIDOS PARA EL CONTROL DE SCRAPING Y ERRORES CONTROLADOS
+
+export interface RespuestaCargarProducto {
+  status: 'listo' | 'procesando' | 'error';
+  asin: string;
+  mensaje?: string; // 👈 Feedback directo desde el backend
+}
+
+export interface RespuestaEstadoScraping {
+  estado: 'procesando' | 'completado' | 'error' | 'error_sin_resenas';
+  asin: string;
+  mensaje?: string; // 👈 Detalle del proceso actual (ej: "Extrayendo opiniones...")
+  sesion_id?: string;
 }

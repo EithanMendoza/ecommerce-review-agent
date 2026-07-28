@@ -10,18 +10,21 @@ export default function VistaRegistro() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null); // 🚀 ESTADO DEL CAPTCHA
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
 
-  const turnstileRef = useRef<TurnstileInstance>(null); // 🚀 REFERENCIA PARA REINICIARLO
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const navigate = useNavigate();
+
+  // Leemos la Site Key desde el archivo .env de Vite
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
   const manejarEnvio = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Doble validación por seguridad
     if (!captchaToken) {
       setError('Por favor, completa la verificación de seguridad.');
@@ -33,22 +36,22 @@ export default function VistaRegistro() {
     setCargando(true);
 
     try {
-      await apiAuth.registrarUsuario({ 
-        firstName, 
-        lastName, 
-        email, 
+      await apiAuth.registrarUsuario({
+        firstName,
+        lastName,
+        email,
         password,
-        captchaToken // 🚀 SE ENVÍA EL TOKEN
+        captchaToken // Se envía el token generado al backend
       });
-      
+
       setMensajeExito('Usuario creado exitosamente. Ya puedes iniciar sesión.');
-      setPassword(''); 
-      
+      setPassword('');
+
       setTimeout(() => navigate('/login'), 2000);
-      
+
     } catch (err: any) {
       setError(err.message || 'Error al crear la cuenta.');
-      // 🚀 Si falla el registro (ej. correo duplicado), reiniciamos el CAPTCHA
+      // Si falla el registro, reiniciamos el CAPTCHA
       turnstileRef.current?.reset();
       setCaptchaToken(null);
     } finally {
@@ -59,7 +62,7 @@ export default function VistaRegistro() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#121212] px-4 select-none">
       <div className="max-w-md w-full bg-[#181818] rounded-2xl shadow-2xl border border-neutral-900 p-8 space-y-6">
-        
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 mb-2">
             <UserPlus size={22} />
@@ -82,7 +85,7 @@ export default function VistaRegistro() {
         )}
 
         <form onSubmit={manejarEnvio} className="space-y-4">
-          
+
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-neutral-400">Nombre</label>
             <div className="relative">
@@ -155,25 +158,29 @@ export default function VistaRegistro() {
             </div>
           </div>
 
-          {/* 🚀 WIDGET DE CLOUDFLARE TURNSTILE */}
+          {/* WIDGET DE CLOUDFLARE TURNSTILE */}
           <div className="flex justify-center py-2">
-            <Turnstile
-              ref={turnstileRef}
-              siteKey="1x00000000000000000000AA" // Clave de prueba (Always Passes)
-              onSuccess={(token) => setCaptchaToken(token)}
-              onError={() => setError('Error al cargar la verificación de seguridad.')}
-              onExpire={() => setCaptchaToken(null)}
-              options={{
-                theme: 'dark', // Combina con tu interfaz
-                size: 'normal'
-              }}
-            />
+            {siteKey ? (
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={siteKey}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onError={() => setError('Error al cargar la verificación de seguridad.')}
+                onExpire={() => setCaptchaToken(null)}
+                options={{
+                  theme: 'dark',
+                  size: 'normal'
+                }}
+              />
+            ) : (
+              <div className="text-red-400 text-xs text-center">Falta la clave VITE_TURNSTILE_SITE_KEY en el .env</div>
+            )}
           </div>
 
           <button
             type="submit"
-            // 🚀 EL BOTÓN SE BLOQUEA HASTA QUE SE RESUELVA EL CAPTCHA
-            disabled={cargando || !firstName || !lastName || !email || !password || !captchaToken} 
+            // El botón se bloquea hasta que el captcha se resuelva correctamente
+            disabled={cargando || !firstName || !lastName || !email || !password || !captchaToken}
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-all disabled:opacity-40 mt-6 shadow-md shadow-indigo-950/40"
           >
             {cargando ? (

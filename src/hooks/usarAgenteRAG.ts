@@ -44,43 +44,65 @@ export const usarAgenteRAG = (sesionId?: string) => {
 
       setEstadoAgente('Generando respuesta');
 
-      // 2. Preparamos el mensaje vacío del agente RAG
+      // 2. Preparamos el mensaje vacío del agente RAG en la pantalla
       const idAgente = (Date.now() + 1).toString();
       setMensajes((prev) => [...prev, { id: idAgente, rol: 'agente', contenido: '' }]);
 
-      // 3. Leemos el Stream de tokens
+      // 3. Leemos el Stream de tokens de forma nativa
       const reader = respuesta.body?.getReader();
       const decoder = new TextDecoder('utf-8');
 
       if (reader) {
         let textoCompleto = '';
         let esPrimerChunk = true;
+        let acumuladorBuffer = ''; // 🚀 BUFFER PARA LÍNEAS SSE FRAGMENTADAS
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          // Decodificamos el chunk que llega
-          const chunkCrudo = decoder.decode(value, { stream: true });
-          
-          // Separamos por los dobles saltos de línea del estándar SSE
-          const lineas = chunkCrudo.split('\n\n');
+          // Decodificamos el chunk binario actual
+          acumuladorBuffer += decoder.decode(value, { stream: true });
+
+          // Separamos por líneas individuales
+          const lineas = acumuladorBuffer.split('\n');
+
+          // Guardamos la última línea (que podría estar incompleta) de vuelta en el buffer
+          acumuladorBuffer = lineas.pop() || '';
+
+          let huboCambio = false;
 
           for (const linea of lineas) {
-            // Solo procesamos las líneas que empiezan con "data: "
-            if (linea.startsWith('data: ')) {
-              // Limpiamos el prefijo para obtener solo el texto que generó el LLM
-              const textoLimpio = linea.replace('data: ', '');
-              textoCompleto += textoLimpio;
+            const lineaLimpia = linea.trim();
+
+            // Procesamos únicamente si cumple con el estándar data: de Server-Sent Events
+            if (lineaLimpia.startsWith('data: ')) {
+              const tokenLLM = lineaLimpia.substring(6); // Extrae todo lo que está después de "data: "
+              textoCompleto += tokenLLM;
+              huboCambio = true;
             }
           }
 
-          if (esPrimerChunk) {
-            setEstadoAgente(null);
-            esPrimerChunk = false;
-          }
+          if (huboCambio) {
+            if (esPrimerChunk) {
+              setEstadoAgente(null);
+              esPrimerChunk = false;
+            }
 
-          // Actualizamos solo el último mensaje en tiempo real
+            // Actualizamos el último mensaje de la pantalla token por token en tiempo real
+            setMensajes((prev) => {
+              const nuevos = [...prev];
+              if (nuevos.length > 0) {
+                nuevos[nuevos.length - 1].contenido = textoCompleto;
+              }
+              return nuevos;
+            });
+          }
+        }
+
+        // 🚀 PROCESAMIENTO RESIDUAL: Si quedó algo en el acumulador sin un salto de línea final
+        if (acumuladorBuffer.startsWith('data: ')) {
+          textoCompleto += acumuladorBuffer.substring(6);
           setMensajes((prev) => {
             const nuevos = [...prev];
             if (nuevos.length > 0) {
@@ -91,7 +113,7 @@ export const usarAgenteRAG = (sesionId?: string) => {
         }
       }
 
-      // Ejecutamos el callback si fue proporcionado de manera segura
+      // Ejecutamos el callback de éxito si fue proporcionado de manera segura
       if (callbackFinalizado) {
         callbackFinalizado(sesionId);
       }
@@ -101,7 +123,12 @@ export const usarAgenteRAG = (sesionId?: string) => {
         console.error("Error en RAG:", error);
         setMensajes((prev) => [
           ...prev,
-          { id: Date.now().toString(), rol: 'agente', contenido: 'Ocurrió un error al procesar tu consulta.' }
+          // 🚀 Utilizamos error.message para pintar el mensaje que mandó el guardrail
+          {
+            id: Date.now().toString(),
+            rol: 'agente',
+            contenido: error.message || 'Ocurrió un error al procesar tu consulta.'
+          }
         ]);
       }
     } finally {

@@ -7,11 +7,12 @@ import type {
 
 const URL_BASE = import.meta.env.VITE_API_URL || '';
 
+
 export const apiAuth = {
   iniciarSesion: async (credenciales: CredencialesLogin): Promise<RespuestaToken> => {
     // FastAPI (OAuth2PasswordRequestForm) exige las llaves 'username' y 'password'
     const formData = new URLSearchParams();
-    formData.append('username', credenciales.email); 
+    formData.append('username', credenciales.email);
     formData.append('password', credenciales.password);
 
     const respuesta = await fetch(`${URL_BASE}/api/auth/login`, {
@@ -57,7 +58,24 @@ export const apiAuth = {
     return respuesta.json();
   },
 
-  cerrarSesion: () => {
+  // CORRECCIÓN CRÍTICA: Llamada al backend para revocar el token en la Blacklist
+  cerrarSesion: async (): Promise<void> => {
+    const token = localStorage.getItem('token_rag');
+
+    if (token) {
+      try {
+        await fetch(`${URL_BASE}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('[LOGOUT] Falló la revocación del token en el servidor', error);
+      }
+    }
+
+    // Siempre lo borramos localmente, incluso si la red falla
     localStorage.removeItem('token_rag');
   },
 

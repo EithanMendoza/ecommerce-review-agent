@@ -14,7 +14,8 @@ interface Props {
 }
 
 export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar }: Props) {
-  const { estado, error, sesionId, procesarEnlace, resetear } = useProcesarProducto();
+  // 🚀 CORRECCIÓN: Extraemos mensajeEstado del hook
+  const { estado, error, mensajeEstado, sesionId, procesarEnlace, resetear } = useProcesarProducto();
 
   useEffect(() => {
     if (!estaAbierto) resetear();
@@ -33,7 +34,7 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
   return (
     // 👈 Envolvemos todo en el ModalBase
     <ModalBase isOpen={estaAbierto}>
-      
+
       {/* CABECERA */}
       <div className="px-5 py-4 sm:px-8 sm:py-5 border-b border-neutral-800 flex justify-between items-center bg-[#161616] shrink-0">
         <div className="flex items-center gap-3">
@@ -58,17 +59,17 @@ export default function ModalCargarProducto({ estaAbierto, alCerrar, alCompletar
         {/* Renderizado Dinámico */}
         <div className="flex-1 p-6 sm:p-10 md:overflow-y-auto bg-[#121212] flex flex-col justify-center">
           {estado === 'exito' && <VistaExito onContinuar={manejarFinalizacion} />}
-          {estado === 'procesando' && <VistaCarga />}
+          {estado === 'procesando' && <VistaCarga mensajeEstado={mensajeEstado} />}
           {estado === 'formulario' && (
-            <VistaFormulario 
-              error={error} 
-              onSubmit={procesarEnlace} 
-              onCancelar={manejarCierreNormal} 
+            <VistaFormulario
+              error={error}
+              onSubmit={procesarEnlace}
+              onCancelar={manejarCierreNormal}
             />
           )}
         </div>
       </div>
-      
+
     </ModalBase>
   );
 }

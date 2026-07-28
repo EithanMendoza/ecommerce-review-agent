@@ -1,8 +1,8 @@
-import type { ResenaRecuperada, SesionChat, MensajeHistorial, ProductoAnalizado, RespuestaHistorialChat } from '../tipos/contratos';
+import type { ResenaRecuperada, SesionChat, MensajeHistorial, ProductoAnalizado, RespuestaHistorialChat, RespuestaEstadoScraping, RespuestaCargarProducto } from '../tipos/contratos';
 import { apiAuth } from '../servicios/apiAuth';
 
-// Ajusta el puerto si tu Uvicorn de Python está corriendo en uno distinto
 const URL_BASE = import.meta.env.VITE_API_URL || '';
+// const URL_BASE = 'http://localhost:8000';
 
 export const apiLocal = {
   /**
@@ -193,7 +193,7 @@ export const apiLocal = {
     }
   },
 
-  consultarEstadoScraping: async (asin: string): Promise<{ estado: string, asin: string, sesion_id?: string }> => {
+  consultarEstadoScraping: async (asin: string): Promise<RespuestaEstadoScraping> => {
     const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/scraper/estado/${asin}`, {
       method: 'GET',
@@ -215,7 +215,7 @@ export const apiLocal = {
     return await respuesta.json();
   },
 
-  cargarNuevoProducto: async (url: string): Promise<any> => {
+  cargarNuevoProducto: async (url: string): Promise<RespuestaCargarProducto> => {
     const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/scraper/iniciar`, {
       method: 'POST',
@@ -223,10 +223,10 @@ export const apiLocal = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      // 🔴 CORRECCIÓN AQUÍ: Ajustado a lo que espera SolicitudScraping
+      // Ajustado a lo que espera SolicitudScraping
       body: JSON.stringify({
         url_o_asin: url,
-        marketplace: "com.mx" // Puedes poner "amazon" por defecto si tu backend lo requiere
+        marketplace: "com.mx"
       })
     });
 
@@ -243,9 +243,12 @@ export const apiLocal = {
     return await respuesta.json();
   },
 
-  descargarCSV: async (): Promise<void> => {
+  // 🔴 CORRECCIÓN CRÍTICA: Se añadió el ASIN como parámetro y se apuntó al nuevo endpoint
+  descargarReporteExcel: async (asin: string): Promise<void> => {
     const token = apiAuth.obtenerToken();
-    const respuesta = await fetch(`${URL_BASE}/api/herramientas/exportar-csv`, {
+
+    // Apuntamos al endpoint protegido que definiste en metricas.py
+    const respuesta = await fetch(`${URL_BASE}/api/metricas/exportar-excel/${asin}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -258,7 +261,9 @@ export const apiLocal = {
         window.location.href = '/login';
         throw new Error('Sesión expirada.');
       }
-      throw new Error('Hubo un error al generar o descargar el archivo CSV.');
+      // Capturamos el error sanitizado que ahora envía el backend (Status 400)
+      const dataError = await respuesta.json().catch(() => null);
+      throw new Error(dataError?.detail || 'Hubo un error al generar o descargar el reporte Excel.');
     }
 
     const blob = await respuesta.blob();
@@ -266,7 +271,8 @@ export const apiLocal = {
 
     const enlace = document.createElement('a');
     enlace.href = urlArchivo;
-    const nombreArchivo = `Reporte_Analisis_${new Date().getTime()}.csv`;
+
+    const nombreArchivo = `Reporte_${asin.toUpperCase()}_${new Date().getTime()}.xlsx`;
     enlace.setAttribute('download', nombreArchivo);
 
     document.body.appendChild(enlace);
