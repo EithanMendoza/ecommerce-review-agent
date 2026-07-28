@@ -60,10 +60,21 @@ export const usarAgenteRAG = (sesionId?: string) => {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const pedazoTexto = decoder.decode(value, { stream: true });
-          textoCompleto += pedazoTexto;
+          // Decodificamos el chunk que llega
+          const chunkCrudo = decoder.decode(value, { stream: true });
+          
+          // Separamos por los dobles saltos de línea del estándar SSE
+          const lineas = chunkCrudo.split('\n\n');
 
-          // Si es el primer pedazo de texto, ocultamos el cuadro de estado
+          for (const linea of lineas) {
+            // Solo procesamos las líneas que empiezan con "data: "
+            if (linea.startsWith('data: ')) {
+              // Limpiamos el prefijo para obtener solo el texto que generó el LLM
+              const textoLimpio = linea.replace('data: ', '');
+              textoCompleto += textoLimpio;
+            }
+          }
+
           if (esPrimerChunk) {
             setEstadoAgente(null);
             esPrimerChunk = false;
