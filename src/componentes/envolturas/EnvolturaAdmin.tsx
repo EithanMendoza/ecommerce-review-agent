@@ -6,7 +6,7 @@ import { apiLocal } from '../../servicios/apiLocal';
 import type { SesionChat } from '../../tipos/contratos';
 import { usarHerramientas } from '../../hooks/usarHerramientas';
 import ModalHerramientas from '../ui/ModalHerramientas';
-import ModalAjustes from '../ui/vistas/ModalAjustes';
+import ModalAjustes from '../ui/ModalAjustes';
 import { apiAuth } from '../../servicios/apiAuth'; // Usamos tu apiAuth original
 import DangerConfirmModal from '../../componentes/chat/DangerConfirmModal';
 import { apiHerramientas } from '../../servicios/apiHerramientas';
