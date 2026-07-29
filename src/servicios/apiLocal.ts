@@ -15,7 +15,8 @@ export const apiLocal = {
 
       const respuesta = await fetch(`${URL_BASE}/api/resenas`, {
         headers: {
-          'Authorization': `Bearer ${token}` // Inyectamos el JWT
+          'Authorization': `Bearer ${token}`, // Inyectamos el JWT
+          'ngrok-skip-browser-warning': 'true'
         }
       });
 
@@ -50,7 +51,8 @@ export const apiLocal = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify({
         mensaje: mensaje,
@@ -85,7 +87,8 @@ export const apiLocal = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify({ asin, titulo })
     });
@@ -112,7 +115,8 @@ export const apiLocal = {
     const respuesta = await fetch(`${URL_BASE}/api/productos`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 
@@ -134,7 +138,8 @@ export const apiLocal = {
     const respuesta = await fetch(`${URL_BASE}/api/sesiones`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 
@@ -156,7 +161,8 @@ export const apiLocal = {
     const respuesta = await fetch(`${URL_BASE}/api/sesiones/${sesionId}/mensajes`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 
@@ -179,7 +185,8 @@ export const apiLocal = {
     const respuesta = await fetch(`${URL_BASE}/api/sesiones/${sesionId}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 
@@ -198,7 +205,8 @@ export const apiLocal = {
     const respuesta = await fetch(`${URL_BASE}/api/scraper/estado/${asin}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 
@@ -221,7 +229,8 @@ export const apiLocal = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       },
       // Ajustado a lo que espera SolicitudScraping
       body: JSON.stringify({
@@ -251,7 +260,8 @@ export const apiLocal = {
     const respuesta = await fetch(`${URL_BASE}/api/metricas/exportar-excel/${asin}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 

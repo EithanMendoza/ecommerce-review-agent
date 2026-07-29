@@ -10,7 +10,8 @@ const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) =>
     ...opciones,
     headers: {
       ...opciones.headers,
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'ngrok-skip-browser-warning': 'true'
     }
   });
 

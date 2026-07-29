@@ -19,6 +19,7 @@ export const apiAuth = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'ngrok-skip-browser-warning': 'true'
       },
       body: formData,
     });
@@ -38,6 +39,7 @@ export const apiAuth = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
       },
       // Unificamos el payload al inglés para hacer match con el login
       body: JSON.stringify({
@@ -67,7 +69,8 @@ export const apiAuth = {
         await fetch(`${URL_BASE}/api/auth/logout`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'ngrok-skip-browser-warning': 'true'
           }
         });
       } catch (error) {
