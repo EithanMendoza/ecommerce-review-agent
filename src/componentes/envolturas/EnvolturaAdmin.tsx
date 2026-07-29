@@ -77,23 +77,17 @@ export default function EnvolturaAdmin() {
       console.log("Contenido del token decodificado:", payload);
 
       if (payload) {
-        // 🚨 Leemos el campo 'username' que viene del backend
-        const correoDetectado = payload.username || "";
+        // 🔄 Leemos el campo 'email' unificado que viene del backend (A-04)
+        const correoDetectado = payload.email || payload.username || "";
 
-        // 🆕 nombre/apellido ahora sí vienen en el token (antes solo estaba 'sub').
-        // Si por algún motivo faltan (ej. tokens viejos emitidos antes de este cambio),
-        // hacemos fallback al correo como antes.
-        const nombreDetectado = payload.nombre || "";
-        const apellidoDetectado = payload.apellido || "";
+        // 🔄 Leemos los nuevos campos estandarizados en inglés (first_name / last_name)
+        const nombreDetectado = payload.first_name || payload.nombre || "";
+        const apellidoDetectado = payload.last_name || payload.apellido || "";
         const nombreCompleto = `${nombreDetectado} ${apellidoDetectado}`.trim();
 
         setUsuario({
-          // El ID sigue siendo el UUID (sub) para que la base de datos no falle al purgar
           id: payload.sub || '',
-
-          // Guardamos el correo completo
           correo: correoDetectado,
-
           nombre: nombreCompleto || (correoDetectado ? correoDetectado.split('@')[0] : 'Usuario'),
           apellido: apellidoDetectado
         });

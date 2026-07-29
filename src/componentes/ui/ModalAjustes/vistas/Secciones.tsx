@@ -10,7 +10,7 @@ export const DEFINICION_SECCIONES = [
     { id: 'peligro' as SeccionActiva, icono: ShieldAlert, titulo: 'Mantenimiento y Borrado', subtitulo: 'Limpiar historial o datos del sistema' },
 ];
 
-export const SeccionPerfil = ({ correo, id }: { correo: string, id: string }) => (
+export const SeccionPerfil = ({ correo, id, nombre, apellido }: { correo: string, id: string, nombre?: string, apellido?: string }) => (
     <div className="space-y-6 md:space-y-8 animate-fadeIn">
         <div>
             <h3 className="text-lg md:text-xl font-bold text-white mb-2">Información del Perfil</h3>

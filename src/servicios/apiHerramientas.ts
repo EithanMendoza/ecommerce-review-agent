@@ -59,7 +59,15 @@ export const apiHerramientas = {
   reportes: () => fetchHerramienta('/api/metricas/reportes', { method: 'GET' }),
 
   // 🧹 LIMPIEZA DE PERFIL: Ejecuta el vaciado en SQLite y ChromaDB de forma segura
-  limpiarCache: () => fetchHerramienta('/api/metricas/limpiar-cache', { method: 'POST' }),
+  limpiarCache: () => 
+    fetchHerramienta('/api/metricas/limpiar-cache', { 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        confirmar_borrado: true,
+        frase_confirmacion: "ELIMINAR"
+      })
+    }),
 
   // 📊 EXPORTACIÓN A EXCEL Y MÉTRICAS
   exportarExcel: (asin: string) =>
