@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ProveedorAuth } from './contextos/ContextoAuth';
 import RutaProtegida from './componentes/envolturas/RutaProtegida';
 import PanelPrincipal from './vistas/PanelPrincipal';
@@ -7,20 +7,6 @@ import VistaLogin from './vistas/VistaLogin';
 // 🚀 Importamos la nueva vista de registro
 import VistaRegistro from './vistas/VistaRegistro'; 
 import EnvolturaAdmin from './componentes/envolturas/EnvolturaAdmin';
-
-// 🆕 Guardián para /chat/:sesionId: solo entra al chat si la navegación vino
-// de dentro de la app (con state.desdeApp = true, ej. clic en el historial).
-// Si entras por recarga, URL directa, o reabriendo el navegador, te manda a Principal.
-function RutaChatExistente() {
-  const location = useLocation();
-  const esNavegacionInterna = (location.state as { desdeApp?: boolean } | null)?.desdeApp === true;
-
-  if (!esNavegacionInterna) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <VistaChat key="existente" />;
-}
 
 export default function Aplicacion() {
   return (
@@ -41,7 +27,7 @@ export default function Aplicacion() {
             <Route path="/chat" element={<VistaChat key="nuevo" />} />
             
             {/* Ruta dinámica para cargar el historial de una sesión existente */}
-            <Route path="/chat/:sesionId" element={<RutaChatExistente />} />
+            <Route path="/chat/:sesionId" element={<VistaChat key="existente" />} />
           </Route>
         </Route>
         
