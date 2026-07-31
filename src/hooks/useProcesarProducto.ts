@@ -7,7 +7,7 @@ export type EstadoModal = 'formulario' | 'procesando' | 'exito';
 export const useProcesarProducto = () => {
   const [estado, setEstado] = useState<EstadoModal>('formulario');
   const [error, setError] = useState<string>('');
-  const [mensajeEstado, setMensajeEstado] = useState<string>(''); // 🚀 FEEDBACK DETALLADO PARA LA UI
+  const [mensajeEstado, setMensajeEstado] = useState<string>('');
   const [sesionId, setSesionId] = useState<string | null>(null);
 
   const operacionActiva = useRef(true);
@@ -24,48 +24,47 @@ export const useProcesarProducto = () => {
     operacionActiva.current = true;
 
     try {
-      // 1. Solicitamos el inicio del Scraping y la Ficha Técnica
+      // 1. Solicitamos el inicio del Scraping
       const respuestaInicial = await apiLocal.cargarNuevoProducto(url);
       const asin = respuestaInicial.asin;
 
-      // VÍA RÁPIDA: Si el producto ya existía en la BD local de este usuario
+      // VÍA RÁPIDA: Si el producto ya existía en la BD
       if (respuestaInicial.status === "listo") {
         setMensajeEstado(respuestaInicial.mensaje || 'Producto recuperado con éxito.');
       }
-      // VÍA LENTA: El scraper entró en la cola de procesamiento en segundo plano
+      // VÍA LENTA: El scraper entró en la cola de procesamiento
       else if (respuestaInicial.status === "procesando") {
-        let estadoActual = "procesando";
         setMensajeEstado(respuestaInicial.mensaje || 'Procesando producto...');
 
-        // 2. Bucle de Sondeo (Polling) dinámico y descriptivo
-        while (estadoActual === "procesando") {
-          if (!operacionActiva.current) return;
+        // 2. Escucha del Stream SSE convertida en Promesa
+        await new Promise<void>((resolve, reject) => {
+          apiLocal.escucharEstadoScraping(asin, (respuestaEstado) => {
+            // Si el usuario cerró el modal o desmontó el componente, ignoramos
+            if (!operacionActiva.current) {
+              resolve(); 
+              return;
+            }
 
-          // Espera estratégica de 3 segundos entre verificaciones
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          if (!operacionActiva.current) return;
+            // Actualizamos la UI en tiempo real
+            setMensajeEstado(respuestaEstado.mensaje || 'Analizando comentarios...');
 
-          // Consultamos el estado exacto del robot
-          const respuestaEstado = await apiLocal.consultarEstadoScraping(asin);
-          estadoActual = respuestaEstado.estado;
-
-          // Inyectamos el mensaje dinámico del backend directamente a la UI
-          setMensajeEstado(respuestaEstado.mensaje || 'Analizando comentarios...');
-
-          // Control explícito de fallos del scraper
-          if (estadoActual === "error_sin_resenas") {
-            throw new Error(respuestaEstado.mensaje || "El producto no cuenta con opiniones públicas suficientes en Amazon.");
-          }
-
-          if (estadoActual === "error") {
-            throw new Error(respuestaEstado.mensaje || "No se pudo completar la extracción del producto. Intenta más tarde.");
-          }
-        }
+            // Evaluamos los estados finales para romper la Promesa
+            if (respuestaEstado.estado === "completado") {
+              resolve(); // ¡Éxito! Avanza a la línea 66
+            } 
+            else if (respuestaEstado.estado === "error_sin_resenas") {
+              reject(new Error(respuestaEstado.mensaje || "El producto no cuenta con opiniones públicas suficientes en Amazon."));
+            } 
+            else if (respuestaEstado.estado === "error" || respuestaEstado.estado === "no_encontrado") {
+              reject(new Error(respuestaEstado.mensaje || "No se pudo completar la extracción del producto. Intenta más tarde."));
+            }
+          }).catch(reject); // Captura errores de red del fetch
+        });
       }
 
       if (!operacionActiva.current) return;
 
-      // 3. Cuando el backend termina con éxito, creamos la conversación enlazada
+      // 3. Cuando el stream termina con éxito, creamos la conversación enlazada
       setMensajeEstado('Indexación completada. Inicializando sesión de chat...');
       const sesion = await apiLocal.crearSesion(asin);
 
@@ -76,7 +75,7 @@ export const useProcesarProducto = () => {
 
     } catch (err: any) {
       if (operacionActiva.current) {
-        // Exponemos el mensaje de error sanitizado y descriptivo hacia la interfaz
+        // Exponemos el error a la interfaz (capturado del reject de la Promesa o de errores HTTP)
         setError(err.message || 'No fue posible procesar el enlace proporcionado.');
         setEstado('formulario');
       }
@@ -94,7 +93,7 @@ export const useProcesarProducto = () => {
   return {
     estado,
     error,
-    mensajeEstado, // 🚀 Exponemos el mensaje para que tus componentes (ej. VistaCarga.tsx) lo muestren
+    mensajeEstado,
     sesionId,
     procesarEnlace,
     resetear

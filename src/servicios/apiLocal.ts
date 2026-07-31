@@ -200,27 +200,78 @@ export const apiLocal = {
     }
   },
 
-  consultarEstadoScraping: async (asin: string): Promise<RespuestaEstadoScraping> => {
+escucharEstadoScraping: async (
+    asin: string, 
+    onUpdate: (estado: RespuestaEstadoScraping) => void //Callback para actualizar tu estado (React/Vue/etc)
+  ): Promise<void> => {
     const token = apiAuth.obtenerToken();
-    const respuesta = await fetch(`${URL_BASE}/api/scraper/estado/${asin}`, {
+    
+    // Apuntamos al nuevo endpoint que termina en /stream/{asin}
+    const respuesta = await fetch(`${URL_BASE}/api/scraper/estado/stream/${asin}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'ngrok-skip-browser-warning': 'true'
+        'ngrok-skip-browser-warning': 'true',
+        'Accept': 'text/event-stream' //Le decimos al servidor que esperamos un stream
       }
     });
 
     if (!respuesta.ok) {
-      // Le agregamos la validación del 401 para mantener la seguridad
       if (respuesta.status === 401) {
         apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada.');
       }
-      throw new Error('Error al consultar el estado del scraping.');
+      throw new Error('Error al conectar con el stream de scraping.');
     }
 
-    return await respuesta.json();
+    // Preparamos el lector del stream
+    const reader = respuesta.body?.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    if (!reader) throw new Error('El navegador no soporta streaming.');
+
+    try {
+      while (true) {
+        // Leemos cada fragmento que el servidor empuja
+        const { value, done } = await reader.read();
+        
+        if (done) break; // El servidor cerró la conexión
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Los eventos SSE están separados por un doble salto de línea
+        const mensajes = buffer.split('\n\n');
+        
+        // Guardamos el último fragmento incompleto en el buffer por si llegó cortado
+        buffer = mensajes.pop() || "";
+
+        for (const mensaje of mensajes) {
+          if (mensaje.startsWith('data: ')) {
+            // Extraemos el JSON quitando "data: " del inicio
+            const jsonStr = mensaje.substring(6).trim();
+            
+            if (jsonStr) {
+              const datos = JSON.parse(jsonStr) as RespuestaEstadoScraping;
+              
+              // 1. Le pasamos el dato fresco a tu UI
+              onUpdate(datos);
+              
+              // 2. Si el proceso terminó (bien o mal), cerramos la conexión desde el cliente
+              const estadosFinales = ['completado', 'error', 'error_sin_resenas', 'no_encontrado'];
+              if (estadosFinales.includes(datos.estado)) {
+                reader.cancel(); // Cierra el stream
+                return;          // Terminamos la ejecución
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error leyendo el stream de estado:", error);
+      throw error;
+    }
   },
 
   cargarNuevoProducto: async (url: string): Promise<RespuestaCargarProducto> => {

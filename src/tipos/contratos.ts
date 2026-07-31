@@ -59,7 +59,7 @@ export interface RespuestaCargarProducto {
 }
 
 export interface RespuestaEstadoScraping {
-  estado: 'procesando' | 'completado' | 'error' | 'error_sin_resenas';
+  estado: 'procesando' | 'completado' | 'error' | 'error_sin_resenas' | 'no_encontrado';
   asin: string;
   mensaje?: string; // 👈 Detalle del proceso actual (ej: "Extrayendo opiniones...")
   sesion_id?: string;
