@@ -7,6 +7,8 @@ import VistaLogin from './vistas/VistaLogin';
 // 🚀 Importamos la nueva vista de registro
 import VistaRegistro from './vistas/VistaRegistro'; 
 import EnvolturaAdmin from './componentes/envolturas/EnvolturaAdmin';
+// 🚀 Importamos el nuevo componente NotFound (Ajusta la ruta según dónde lo guardaste)
+import NotFound from './componentes/NotFound'; 
 
 export default function Aplicacion() {
   return (
@@ -31,8 +33,8 @@ export default function Aplicacion() {
           </Route>
         </Route>
         
-        {/* 🚀 Ruta de respaldo: Si escriben una URL que no existe, los manda al login */}
-        <Route path="*" element={<VistaLogin />} />
+        {/* 🚀 Ruta de respaldo (404): Renderiza la página de no encontrado en lugar del login */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </ProveedorAuth>
   );
