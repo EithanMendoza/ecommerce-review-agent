@@ -9,7 +9,6 @@ const URL_BASE = import.meta.env.VITE_API_URL || '';
 
 export const apiAuth = {
   iniciarSesion: async (credenciales: CredencialesLogin): Promise<RespuestaToken> => {
-    // FastAPI (OAuth2PasswordRequestForm) exige las llaves 'username' y 'password'
     const formData = new URLSearchParams();
     formData.append('username', credenciales.email);
     formData.append('password', credenciales.password);
@@ -24,27 +23,16 @@ export const apiAuth = {
     });
 
     if (!respuesta.ok) {
-      const errorText = await respuesta.text();
-      console.error("[DEBUG LOGIN] Error en respuesta del servidor:", respuesta.status, errorText);
       throw new Error('Credenciales inválidas');
     }
 
     const datos: RespuestaToken = await respuesta.json();
 
-    // 🔍 DEPURACIÓN: Vamos a imprimir lo que llega exactamente del backend
-    console.log("[DEBUG LOGIN] Objeto JSON recibido del backend:", datos);
-    console.log("[DEBUG LOGIN] token:", datos.access_token);
-    console.log("[DEBUG LOGIN] first_name:", datos.first_name);
-    console.log("[DEBUG LOGIN] last_name:", datos.last_name);
-    console.log("[DEBUG LOGIN] email:", datos.email);
-
-    // Limpiamos rastros anteriores para evitar concatenaciones raras
     localStorage.removeItem('token_rag');
     localStorage.removeItem('user_first_name');
     localStorage.removeItem('user_last_name');
     localStorage.removeItem('user_email');
 
-    // Guardamos de forma independiente y aislada
     localStorage.setItem('token_rag', datos.access_token);
     localStorage.setItem('user_first_name', datos.first_name ?? '');
     localStorage.setItem('user_last_name', datos.last_name ?? '');
@@ -94,7 +82,6 @@ export const apiAuth = {
       }
     }
 
-    // Borramos todo localmente
     localStorage.removeItem('token_rag');
     localStorage.removeItem('user_first_name');
     localStorage.removeItem('user_last_name');

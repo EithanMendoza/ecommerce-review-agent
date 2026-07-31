@@ -74,24 +74,19 @@ export default function EnvolturaAdmin() {
     const token = apiAuth.obtenerToken();
     if (token) {
       const payload = decodificarTokenNativo(token);
-      console.log("Contenido del token decodificado:", payload);
 
-      if (payload) {
-        // 🔄 Leemos el campo 'email' unificado que viene del backend (A-04)
-        const correoDetectado = payload.email || payload.username || "";
+      // 🔄 Leemos los datos limpios directamente desde el localStorage que guardó apiAuth
+      const nombreGuardado = localStorage.getItem('user_first_name') || '';
+      const apellidoGuardado = localStorage.getItem('user_last_name') || '';
+      const correoGuardado = localStorage.getItem('user_email') || '';
+      const nombreCompleto = `${nombreGuardado} ${apellidoGuardado}`.trim();
 
-        // 🔄 Leemos los nuevos campos estandarizados en inglés (first_name / last_name)
-        const nombreDetectado = payload.first_name || payload.nombre || "";
-        const apellidoDetectado = payload.last_name || payload.apellido || "";
-        const nombreCompleto = `${nombreDetectado} ${apellidoDetectado}`.trim();
-
-        setUsuario({
-          id: payload.sub || '',
-          correo: correoDetectado,
-          nombre: nombreCompleto || (correoDetectado ? correoDetectado.split('@')[0] : 'Usuario'),
-          apellido: apellidoDetectado
-        });
-      }
+      setUsuario({
+        id: payload?.sub || '',
+        correo: correoGuardado,
+        nombre: nombreCompleto || (correoGuardado ? correoGuardado.split('@')[0] : 'Usuario'),
+        apellido: apellidoGuardado
+      });
     }
     cargarHistorial();
   }, [ubicacion.pathname]);
