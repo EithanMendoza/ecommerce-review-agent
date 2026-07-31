@@ -24,16 +24,31 @@ export const apiAuth = {
     });
 
     if (!respuesta.ok) {
+      const errorText = await respuesta.text();
+      console.error("[DEBUG LOGIN] Error en respuesta del servidor:", respuesta.status, errorText);
       throw new Error('Credenciales inválidas');
     }
 
     const datos: RespuestaToken = await respuesta.json();
 
-    // Guardamos el token y los datos de perfil para la interfaz de forma aislada
+    // 🔍 DEPURACIÓN: Vamos a imprimir lo que llega exactamente del backend
+    console.log("[DEBUG LOGIN] Objeto JSON recibido del backend:", datos);
+    console.log("[DEBUG LOGIN] token:", datos.access_token);
+    console.log("[DEBUG LOGIN] first_name:", datos.first_name);
+    console.log("[DEBUG LOGIN] last_name:", datos.last_name);
+    console.log("[DEBUG LOGIN] email:", datos.email);
+
+    // Limpiamos rastros anteriores para evitar concatenaciones raras
+    localStorage.removeItem('token_rag');
+    localStorage.removeItem('user_first_name');
+    localStorage.removeItem('user_last_name');
+    localStorage.removeItem('user_email');
+
+    // Guardamos de forma independiente y aislada
     localStorage.setItem('token_rag', datos.access_token);
-    localStorage.setItem('user_first_name', datos.first_name);
-    localStorage.setItem('user_last_name', datos.last_name);
-    localStorage.setItem('user_email', datos.email);
+    localStorage.setItem('user_first_name', datos.first_name ?? '');
+    localStorage.setItem('user_last_name', datos.last_name ?? '');
+    localStorage.setItem('user_email', datos.email ?? '');
 
     return datos;
   },
@@ -45,7 +60,6 @@ export const apiAuth = {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true'
       },
-      // Unificamos el payload al inglés para hacer match con el login
       body: JSON.stringify({
         first_name: datosRegistro.firstName,
         last_name: datosRegistro.lastName,
@@ -56,7 +70,6 @@ export const apiAuth = {
     });
 
     if (!respuesta.ok) {
-      // Intentamos extraer el mensaje de error del backend (FastAPI envía {"detail": "..."})
       const errorData = await respuesta.json().catch(() => ({}));
       throw new Error(errorData.detail || 'Error al registrar el usuario. El correo podría ya estar en uso.');
     }
@@ -64,7 +77,6 @@ export const apiAuth = {
     return respuesta.json();
   },
 
-  // CORRECCIÓN CRÍTICA: Llamada al backend para revocar el token en la Blacklist
   cerrarSesion: async (): Promise<void> => {
     const token = localStorage.getItem('token_rag');
 
@@ -82,7 +94,7 @@ export const apiAuth = {
       }
     }
 
-    // Siempre borramos el token y los datos locales, incluso si la red falla
+    // Borramos todo localmente
     localStorage.removeItem('token_rag');
     localStorage.removeItem('user_first_name');
     localStorage.removeItem('user_last_name');
