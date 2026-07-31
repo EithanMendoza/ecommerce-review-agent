@@ -27,6 +27,7 @@ export const apiAuth = {
     }
 
     const datos: RespuestaToken = await respuesta.json();
+    console.log("JSON recibido del backend:", datos);
 
     localStorage.removeItem('token_rag');
     localStorage.removeItem('user_first_name');
