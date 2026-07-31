@@ -14,6 +14,9 @@ export interface DatosRegistro {
 export interface RespuestaToken {
   access_token: string;
   token_type: string;
+  first_name: string; // 👈 Añadido para que el frontend lo reconozca
+  last_name: string;  // 👈 Añadido para que el frontend lo reconozca
+  email: string;
 }
 
 export interface RespuestaRegistro {

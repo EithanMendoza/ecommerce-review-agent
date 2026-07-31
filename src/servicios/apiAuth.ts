@@ -7,7 +7,6 @@ import type {
 
 const URL_BASE = import.meta.env.VITE_API_URL || '';
 
-
 export const apiAuth = {
   iniciarSesion: async (credenciales: CredencialesLogin): Promise<RespuestaToken> => {
     // FastAPI (OAuth2PasswordRequestForm) exige las llaves 'username' y 'password'
@@ -29,8 +28,13 @@ export const apiAuth = {
     }
 
     const datos: RespuestaToken = await respuesta.json();
-    // Guardamos el token de forma aislada
+
+    // Guardamos el token y los datos de perfil para la interfaz de forma aislada
     localStorage.setItem('token_rag', datos.access_token);
+    localStorage.setItem('user_first_name', datos.first_name);
+    localStorage.setItem('user_last_name', datos.last_name);
+    localStorage.setItem('user_email', datos.email);
+
     return datos;
   },
 
@@ -78,8 +82,11 @@ export const apiAuth = {
       }
     }
 
-    // Siempre lo borramos localmente, incluso si la red falla
+    // Siempre borramos el token y los datos locales, incluso si la red falla
     localStorage.removeItem('token_rag');
+    localStorage.removeItem('user_first_name');
+    localStorage.removeItem('user_last_name');
+    localStorage.removeItem('user_email');
   },
 
   obtenerToken: () => {
