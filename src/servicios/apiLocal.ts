@@ -11,19 +11,16 @@ export const apiLocal = {
    */
   obtenerResenas: async (): Promise<ResenaRecuperada[]> => {
     try {
-      const token = apiAuth.obtenerToken(); // Obtenemos el JWT
-
       const respuesta = await fetch(`${URL_BASE}/api/resenas`, {
+        credentials: 'include', // 🍪 manda la cookie HttpOnly en vez del header Authorization
         headers: {
-          'Authorization': `Bearer ${token}`, // Inyectamos el JWT
           'ngrok-skip-browser-warning': 'true'
         }
       });
 
       if (!respuesta.ok) {
-        // Opcional: Manejo específico si el token de FastAPI expira
         if (respuesta.status === 401) {
-          throw new Error('No autorizado: El token es inválido o ha expirado');
+          throw new Error('No autorizado: la sesión es inválida o ha expirado');
         }
         throw new Error(`Error HTTP: ${respuesta.status}`);
       }
@@ -44,14 +41,11 @@ export const apiLocal = {
     idSesion: string,
     signal?: AbortSignal
   ): Promise<Response> => {
-    const token = apiAuth.obtenerToken();
-
-    // Importante: Asegúrate de que la ruta coincida con el @router.post("/consultar") de tu chat.py
     const respuesta = await fetch(`${URL_BASE}/api/consultar`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify({
@@ -63,7 +57,7 @@ export const apiLocal = {
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
@@ -72,7 +66,6 @@ export const apiLocal = {
       throw new Error(errorData.detail || 'Error en la comunicación con el agente RAG');
     }
 
-    // Retornamos el objeto Response sin procesar
     return respuesta;
   },
 
@@ -81,13 +74,11 @@ export const apiLocal = {
    * Conecta con el POST /api/sesiones de historial.py (usa crear_sesion() de sesiones.py).
    */
   crearSesion: async (asin: string, titulo?: string): Promise<{ id: string; asin: string; titulo: string }> => {
-    const token = apiAuth.obtenerToken();
-
     const respuesta = await fetch(`${URL_BASE}/api/sesiones`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify({ asin, titulo })
@@ -95,7 +86,7 @@ export const apiLocal = {
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
@@ -111,18 +102,17 @@ export const apiLocal = {
    * Se usa en "Chat nuevo" para dejar elegir sobre cuál producto seguir preguntando.
    */
   listarProductos: async (): Promise<ProductoAnalizado[]> => {
-    const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/productos`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       }
     });
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
@@ -134,18 +124,17 @@ export const apiLocal = {
   },
 
   listarSesiones: async (): Promise<SesionChat[]> => {
-    const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/sesiones`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       }
     });
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
@@ -157,42 +146,38 @@ export const apiLocal = {
   },
 
   obtenerHistorialChat: async (sesionId: string): Promise<RespuestaHistorialChat> => {
-    const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/sesiones/${sesionId}/mensajes`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       }
     });
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
       throw new Error('No se pudo cargar el historial del chat');
     }
 
-    // 🆕 Devolvemos el objeto completo (antes solo se devolvía `datos.mensajes`,
-    // y se perdía el `asin` que el backend ya manda en historial.py)
     return await respuesta.json();
   },
 
   eliminarSesion: async (sesionId: string): Promise<void> => {
-    const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/sesiones/${sesionId}`, {
       method: 'DELETE',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       }
     });
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
       }
@@ -200,32 +185,28 @@ export const apiLocal = {
     }
   },
 
-escucharEstadoScraping: async (
-    asin: string, 
-    onUpdate: (estado: RespuestaEstadoScraping) => void //Callback para actualizar tu estado (React/Vue/etc)
+  escucharEstadoScraping: async (
+    asin: string,
+    onUpdate: (estado: RespuestaEstadoScraping) => void
   ): Promise<void> => {
-    const token = apiAuth.obtenerToken();
-    
-    // Apuntamos al nuevo endpoint que termina en /stream/{asin}
     const respuesta = await fetch(`${URL_BASE}/api/scraper/estado/stream/${asin}`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true',
-        'Accept': 'text/event-stream' //Le decimos al servidor que esperamos un stream
+        'Accept': 'text/event-stream'
       }
     });
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada.');
       }
       throw new Error('Error al conectar con el stream de scraping.');
     }
 
-    // Preparamos el lector del stream
     const reader = respuesta.body?.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -234,35 +215,28 @@ escucharEstadoScraping: async (
 
     try {
       while (true) {
-        // Leemos cada fragmento que el servidor empuja
         const { value, done } = await reader.read();
-        
-        if (done) break; // El servidor cerró la conexión
+
+        if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        
-        // Los eventos SSE están separados por un doble salto de línea
+
         const mensajes = buffer.split('\n\n');
-        
-        // Guardamos el último fragmento incompleto en el buffer por si llegó cortado
         buffer = mensajes.pop() || "";
 
         for (const mensaje of mensajes) {
           if (mensaje.startsWith('data: ')) {
-            // Extraemos el JSON quitando "data: " del inicio
             const jsonStr = mensaje.substring(6).trim();
-            
+
             if (jsonStr) {
               const datos = JSON.parse(jsonStr) as RespuestaEstadoScraping;
-              
-              // 1. Le pasamos el dato fresco a tu UI
+
               onUpdate(datos);
-              
-              // 2. Si el proceso terminó (bien o mal), cerramos la conexión desde el cliente
+
               const estadosFinales = ['completado', 'error', 'error_sin_resenas', 'no_encontrado'];
               if (estadosFinales.includes(datos.estado)) {
-                reader.cancel(); // Cierra el stream
-                return;          // Terminamos la ejecución
+                reader.cancel();
+                return;
               }
             }
           }
@@ -275,15 +249,13 @@ escucharEstadoScraping: async (
   },
 
   cargarNuevoProducto: async (url: string): Promise<RespuestaCargarProducto> => {
-    const token = apiAuth.obtenerToken();
     const respuesta = await fetch(`${URL_BASE}/api/scraper/iniciar`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       },
-      // Ajustado a lo que espera SolicitudScraping
       body: JSON.stringify({
         url_o_asin: url,
         marketplace: "com.mx"
@@ -292,7 +264,7 @@ escucharEstadoScraping: async (
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada.');
       }
@@ -303,26 +275,21 @@ escucharEstadoScraping: async (
     return await respuesta.json();
   },
 
-  // 🔴 CORRECCIÓN CRÍTICA: Se añadió el ASIN como parámetro y se apuntó al nuevo endpoint
   descargarReporteExcel: async (asin: string): Promise<void> => {
-    const token = apiAuth.obtenerToken();
-
-    // Apuntamos al endpoint protegido que definiste en metricas.py
     const respuesta = await fetch(`${URL_BASE}/api/metricas/exportar-excel/${asin}`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'ngrok-skip-browser-warning': 'true'
       }
     });
 
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
-        apiAuth.cerrarSesion();
+        await apiAuth.cerrarSesion();
         window.location.href = '/login';
         throw new Error('Sesión expirada.');
       }
-      // Capturamos el error sanitizado que ahora envía el backend (Status 400)
       const dataError = await respuesta.json().catch(() => null);
       throw new Error(dataError?.detail || 'Hubo un error al generar o descargar el reporte Excel.');
     }

@@ -3,21 +3,20 @@ import { apiAuth } from './apiAuth';
 const URL_BASE = import.meta.env.VITE_API_URL || '';
 
 
-// Función auxiliar para no repetir la inyección del token
+// Función auxiliar para no repetir la config de credenciales en cada llamada
 const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) => {
-  const token = apiAuth.obtenerToken();
   const respuesta = await fetch(`${URL_BASE}${endpoint}`, {
     ...opciones,
+    credentials: 'include', // 🍪 manda la cookie HttpOnly en vez del header Authorization
     headers: {
       ...opciones.headers,
-      'Authorization': `Bearer ${token}`,
       'ngrok-skip-browser-warning': 'true'
     }
   });
 
   if (!respuesta.ok) {
     if (respuesta.status === 401) {
-      apiAuth.cerrarSesion();
+      await apiAuth.cerrarSesion();
       window.location.href = '/login';
       throw new Error('Sesión expirada.');
     }

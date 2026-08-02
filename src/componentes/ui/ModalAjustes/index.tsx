@@ -9,11 +9,13 @@ interface Props {
     onClose: () => void;
     usuarioId: string;
     usuarioCorreo: string;
+    usuarioNombre?: string;    // 🆕
+    usuarioApellido?: string;  // 🆕
     onAbrirAnalisis: () => void;
     onHistorialPurged: () => void; // 👈 1. Agrega esto
 }
 
-export default function ModalAjustes({ isOpen, onClose, usuarioId, usuarioCorreo, onAbrirAnalisis, onHistorialPurged }: Props) {
+export default function ModalAjustes({ isOpen, onClose, usuarioId, usuarioCorreo, usuarioNombre, usuarioApellido, onAbrirAnalisis, onHistorialPurged }: Props) {
     const [seccion, setSeccion] = useState<SeccionActiva>('perfil');
     const [vistaMovil, setVistaMovil] = useState<'menu' | 'contenido'>('menu');
 
@@ -28,7 +30,7 @@ export default function ModalAjustes({ isOpen, onClose, usuarioId, usuarioCorreo
 
     const renderContenidoSeccion = () => {
         switch (seccion) {
-            case 'perfil': return <SeccionPerfil correo={usuarioCorreo} id={usuarioId} />;
+            case 'perfil': return <SeccionPerfil correo={usuarioCorreo} id={usuarioId} nombre={usuarioNombre} apellido={usuarioApellido} />;
             case 'modulos': return <SeccionModulos onAbrirAnalisis={onAbrirAnalisis} />;
             case 'peligro': return <SeccionPeligro bloqueado={ejecutandoAccion !== null} onConfirmar={abrirConfirmacion} />;
             default: return null;

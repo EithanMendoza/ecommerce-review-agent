@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { apiHerramientas } from '../servicios/apiHerramientas';
+import { usarAuth } from '../contextos/ContextoAuth'; // 👈 Importamos tu contexto
+import { useNavigate } from 'react-router-dom';      // 👈 Importamos el router
 
 export type AccionPeligrosa = 'chat' | 'cache' | null;
 
@@ -9,6 +11,10 @@ export const useAjustes = (usuarioId: string, onHistorialPurged: () => void) => 
 
     const [notificacion, setNotificacion] = useState({ abierta: false, tipo: 'info', titulo: '', descripcion: '' });
     const [confirmacion, setConfirmacion] = useState({ abierta: false, accion: null as AccionPeligrosa, titulo: '', descripcion: '' });
+
+    // 🆕 Extraemos las herramientas necesarias
+    const { logout } = usarAuth(); 
+    const navigate = useNavigate();
 
     const abrirConfirmacion = useCallback((accion: AccionPeligrosa, titulo: string, descripcion: string) => {
         setConfirmacion({ abierta: true, accion, titulo, descripcion });
@@ -31,7 +37,7 @@ export const useAjustes = (usuarioId: string, onHistorialPurged: () => void) => 
                     titulo: '¡Historial Eliminado!',
                     descripcion: res.message || 'Todas tus conversaciones han sido borradas permanentemente.'
                 });
-                onHistorialPurged(); // 👈 2. Llamamos a la función cuando se purga el historial
+                onHistorialPurged();
             }
 
             if (confirmacion.accion === 'cache') {
@@ -54,13 +60,17 @@ export const useAjustes = (usuarioId: string, onHistorialPurged: () => void) => 
         }
     };
 
-    const manejarCerrarSesion = useCallback(() => {
+    // 🚀 Lógica real conectada con backend y frontend
+    const manejarCerrarSesion = useCallback(async () => {
         setCerrandoSesion(true);
-        setTimeout(() => {
-            localStorage.removeItem('token_rag');
-            window.location.href = '/login';
-        }, 1500);
-    }, []);
+        try {
+            await logout();      // 1. Backend borra cookie y Frontend limpia memoria de React
+            navigate('/login');  // 2. Redirección inmediata a la pantalla de inicio
+        } catch (error) {
+            console.error('Error durante el cierre de sesión:', error);
+            setCerrandoSesion(false); // Por si falla, quitamos el estado de carga
+        }
+    }, [logout, navigate]);
 
     return {
         ejecutandoAccion, cerrandoSesion, notificacion, confirmacion,

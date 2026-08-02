@@ -7,7 +7,7 @@ import type { SesionChat } from '../../tipos/contratos';
 import { usarHerramientas } from '../../hooks/usarHerramientas';
 import ModalHerramientas from '../ui/ModalHerramientas';
 import ModalAjustes from '../ui/ModalAjustes';
-import { apiAuth } from '../../servicios/apiAuth'; // Usamos tu apiAuth original
+import { usarAuth } from '../../contextos/ContextoAuth'; // 🔄 CAMBIO: ya no leemos el JWT a mano, usamos el contexto
 import DangerConfirmModal from '../../componentes/chat/DangerConfirmModal';
 import { apiHerramientas } from '../../servicios/apiHerramientas';
 
@@ -26,32 +26,22 @@ export default function EnvolturaAdmin() {
 
   const { diagnostico, datosModal, cerrarModal, cargandoTool } = usarHerramientas();
 
-  // Estado de usuario dinámico que se llenará con el token real
-  const [usuario, setUsuario] = useState({ id: '', nombre: 'Usuario', apellido: '', correo: '' });
+  // 🔄 CAMBIO: el usuario ya no se arma decodificando el JWT con atob().
+  // El JWT es HttpOnly (no accesible desde JS); estos datos ya vinieron
+  // del backend vía /api/auth/me cuando el ProveedorAuth cargó la app.
+  const { usuario: usuarioAuth } = usarAuth();
+
+  const usuario = {
+    id: usuarioAuth?.id || '',
+    correo: usuarioAuth?.email || '',
+    nombre:
+      `${usuarioAuth?.first_name || ''} ${usuarioAuth?.last_name || ''}`.trim() ||
+      (usuarioAuth?.email ? usuarioAuth.email.split('@')[0] : 'Usuario'),
+    apellido: usuarioAuth?.last_name || ''
+  };
 
   const [chatAEliminar, setChatAEliminar] = useState<string | null>(null);
   const [eliminandoChat, setEliminandoChat] = useState(false);
-
-
-
-  // Función para decodificar el JWT de forma nativa sin librerías externas
-  const decodificarTokenNativo = (token: string) => {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        window
-          .atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch (e) {
-      console.error("Error al decodificar el token:", e);
-      return null;
-    }
-  };
 
   const onProductoCargado = (sesionId: string) => {
     cargarHistorial();          // refresca el historial del sidebar
@@ -71,23 +61,6 @@ export default function EnvolturaAdmin() {
   };
 
   useEffect(() => {
-    const token = apiAuth.obtenerToken();
-    if (token) {
-      const payload = decodificarTokenNativo(token);
-
-      // 🔄 Leemos los datos limpios directamente desde el localStorage que guardó apiAuth
-      const nombreGuardado = localStorage.getItem('user_first_name') || '';
-      const apellidoGuardado = localStorage.getItem('user_last_name') || '';
-      const correoGuardado = localStorage.getItem('user_email') || '';
-      const nombreCompleto = `${nombreGuardado} ${apellidoGuardado}`.trim();
-
-      setUsuario({
-        id: payload?.sub || '',
-        correo: correoGuardado,
-        nombre: nombreCompleto || (correoGuardado ? correoGuardado.split('@')[0] : 'Usuario'),
-        apellido: apellidoGuardado
-      });
-    }
     cargarHistorial();
   }, [ubicacion.pathname]);
 
@@ -153,11 +126,6 @@ export default function EnvolturaAdmin() {
       )}
 
       {/* 💻 SIDEBAR IZQUIERDO */}
-      {/*
-        🆕 Antes: "hidden md:flex" ocultaba el sidebar por completo en móvil sin forma de mostrarlo.
-        Ahora: en móvil se posiciona fixed y se desliza dentro/fuera de la pantalla según el estado.
-        En escritorio (md:) se comporta igual que antes, siempre visible y estático.
-      */}
       <aside
         className={`fixed md:static top-0 left-0 h-full w-64 bg-[#121212] border-r border-neutral-900 flex flex-col z-50
         transform transition-transform duration-300 ease-in-out
@@ -280,6 +248,8 @@ export default function EnvolturaAdmin() {
           onClose={() => setMostrarModalAjustes(false)}
           usuarioId={usuario.id}
           usuarioCorreo={usuario.correo}
+          usuarioNombre={usuario.nombre}      // 🆕
+          usuarioApellido={usuario.apellido}  // 🆕
           onAbrirAnalisis={() => setMostrarModalProducto(true)}
           onHistorialPurged={() => {
             setSesiones([]); // Vacía la lista en el Sidebar reactivamente
