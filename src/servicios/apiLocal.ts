@@ -2,7 +2,7 @@ import type { ResenaRecuperada, SesionChat, MensajeHistorial, ProductoAnalizado,
 import { apiAuth } from '../servicios/apiAuth';
 
 const URL_BASE = import.meta.env.VITE_API_URL || '';
-// const URL_BASE = 'http://localhost:8000';
+
 
 export const apiLocal = {
   /**

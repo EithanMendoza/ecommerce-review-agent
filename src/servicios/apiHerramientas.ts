@@ -3,6 +3,7 @@ import { apiAuth } from './apiAuth';
 const URL_BASE = import.meta.env.VITE_API_URL || '';
 
 
+
 // Función auxiliar para no repetir la config de credenciales en cada llamada
 const fetchHerramienta = async (endpoint: string, opciones: RequestInit = {}) => {
   const respuesta = await fetch(`${URL_BASE}${endpoint}`, {
@@ -58,8 +59,8 @@ export const apiHerramientas = {
   reportes: () => fetchHerramienta('/api/metricas/reportes', { method: 'GET' }),
 
   // 🧹 LIMPIEZA DE PERFIL: Ejecuta el vaciado en SQLite y ChromaDB de forma segura
-  limpiarCache: () => 
-    fetchHerramienta('/api/metricas/limpiar-cache', { 
+  limpiarCache: () =>
+    fetchHerramienta('/api/metricas/limpiar-cache', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -68,7 +69,7 @@ export const apiHerramientas = {
       })
     }),
 
-// 📊 EXPORTACIÓN A EXCEL Y MÉTRICAS
+  // 📊 EXPORTACIÓN A EXCEL Y MÉTRICAS
   exportarExcel: (asin: string) =>
     fetchHerramienta(`/api/metricas/exportar-excel/${asin}`, {
       method: 'POST',

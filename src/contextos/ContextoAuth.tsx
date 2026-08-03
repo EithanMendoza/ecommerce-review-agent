@@ -50,14 +50,18 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
     setAutenticado(true);
   };
 
- const logout = async () => {
+  const logout = async () => {
     // 1. Esperamos a que el servidor borre la cookie de verdad
-    await apiAuth.cerrarSesion(); 
-    
+    await apiAuth.cerrarSesion();
+
     // 2. Limpiamos el estado global de React
     setAutenticado(false);
     setUsuario(null);
   };
+
+  if (cargandoAuth) {
+    return <div>Cargando aplicación...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ autenticado, cargandoAuth, usuario, login, logout }}>
@@ -65,6 +69,7 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
 
 export const usarAuth = () => {
   const context = useContext(AuthContext);

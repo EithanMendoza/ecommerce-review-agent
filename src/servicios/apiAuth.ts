@@ -6,6 +6,8 @@ import type {
 
 const URL_BASE = import.meta.env.VITE_API_URL || '';
 
+
+
 // La respuesta de /login ya no trae el JWT (viaja en la cookie HttpOnly),
 // solo trae los datos del usuario para pintar la UI.
 export interface RespuestaSesion {
@@ -70,7 +72,7 @@ export const apiAuth = {
     return respuesta.json();
   },
 
-cerrarSesion: async (): Promise<void> => {
+  cerrarSesion: async (): Promise<void> => {
     try {
       await fetch(`${URL_BASE}/api/auth/logout`, {
         method: 'POST',
