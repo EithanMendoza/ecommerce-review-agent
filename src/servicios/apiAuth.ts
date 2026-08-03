@@ -18,6 +18,33 @@ export interface RespuestaSesion {
   email?: string;
 }
 
+// NUEVO: error estructurado para distinguir credenciales inválidas de los
+// bloqueos por sesión única / IP compartida. El backend manda estos códigos
+// en el `detail` cuando aplica (ver modulos/api/routes/auth.py).
+export interface ErrorSesionAPI {
+  status: number;
+  codigo?: 'sesion_activa' | 'ip_bloqueada';
+  mensaje: string;
+}
+
+async function construirErrorSesion(respuesta: Response, mensajePorDefecto: string): Promise<ErrorSesionAPI> {
+  const cuerpo = await respuesta.json().catch(() => ({}));
+  const detalle = cuerpo?.detail;
+
+  if (detalle && typeof detalle === 'object') {
+    return {
+      status: respuesta.status,
+      codigo: detalle.codigo,
+      mensaje: detalle.mensaje || mensajePorDefecto,
+    };
+  }
+
+  return {
+    status: respuesta.status,
+    mensaje: typeof detalle === 'string' ? detalle : mensajePorDefecto,
+  };
+}
+
 export const apiAuth = {
   iniciarSesion: async (credenciales: CredencialesLogin): Promise<RespuestaSesion> => {
     const respuesta = await fetch(`${URL_BASE}/api/auth/login`, {
@@ -35,7 +62,10 @@ export const apiAuth = {
     });
 
     if (!respuesta.ok) {
-      throw new Error('Credenciales inválidas');
+      // 🔄 CAMBIO: antes se lanzaba un Error genérico para cualquier fallo.
+      // Ahora propagamos status + código para que VistaLogin.tsx pueda
+      // mostrar un mensaje específico (sesión activa / IP bloqueada / credenciales).
+      throw await construirErrorSesion(respuesta, 'Credenciales inválidas');
     }
 
     const datos: RespuestaSesion = await respuesta.json();

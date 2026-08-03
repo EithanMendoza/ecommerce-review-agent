@@ -3,6 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
 import { usarAuth } from '../contextos/ContextoAuth';
 import { apiAuth } from '../servicios/apiAuth';
+import type { ErrorSesionAPI } from '../servicios/apiAuth';
+
+// Mapea el código estructurado que manda el backend a un mensaje amigable.
+// Si no viene código (ej. 401 de credenciales), cae al mensaje genérico.
+function mensajeDeError(err: unknown): string {
+  const error = err as Partial<ErrorSesionAPI>;
+
+  if (error?.codigo === 'sesion_activa') {
+    return 'Ya tienes una sesión activa en otro dispositivo o pestaña. Cierra sesión allí primero.';
+  }
+  if (error?.codigo === 'ip_bloqueada') {
+    return 'Esta red ya tiene una cuenta con sesión activa. No se permite más de una cuenta por conexión.';
+  }
+  return 'Credenciales incorrectas. Verifica tu correo y contraseña.';
+}
 
 export default function VistaLogin() {
   // 🔄 CAMBIO: Variables unificadas al inglés
@@ -29,7 +44,9 @@ export default function VistaLogin() {
       
       navigate('/');
     } catch (err) {
-      setError('Credenciales incorrectas. Verifica tu correo y contraseña.');
+      // 🔄 CAMBIO: mensaje específico según el código de error del backend
+      // (sesión activa / IP bloqueada / credenciales inválidas)
+      setError(mensajeDeError(err));
     } finally {
       setCargando(false);
     }
