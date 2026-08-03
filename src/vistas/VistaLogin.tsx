@@ -23,7 +23,10 @@ export default function VistaLogin() {
     try {
       // 🔄 CAMBIO: Enviamos el payload estandarizado
       const respuesta = await apiAuth.iniciarSesion({ email, password });
-      login(respuesta.access_token);
+      
+      // CORRECCIÓN: Pasamos el objeto completo, no solo el token
+      login(respuesta); 
+      
       navigate('/');
     } catch (err) {
       setError('Credenciales incorrectas. Verifica tu correo y contraseña.');
