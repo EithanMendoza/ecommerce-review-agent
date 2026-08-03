@@ -70,15 +70,16 @@ export const apiAuth = {
     return respuesta.json();
   },
 
-  cerrarSesion: async (): Promise<void> => {
+cerrarSesion: async (): Promise<void> => {
     try {
       await fetch(`${URL_BASE}/api/auth/logout`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json', // ✅ Solo necesario en POST
           'ngrok-skip-browser-warning': 'true'
         },
-        // La cookie identifica la sesión a cerrar; ya no hace falta el header Authorization.
         credentials: 'include',
+        body: JSON.stringify({}) // ✅ Falso body para pasar el firewall
       });
     } catch (error) {
       console.error('[LOGOUT] Falló la revocación del token en el servidor', error);
