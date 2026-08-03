@@ -68,16 +68,20 @@ export const apiHerramientas = {
       })
     }),
 
-  // 📊 EXPORTACIÓN A EXCEL Y MÉTRICAS
+// 📊 EXPORTACIÓN A EXCEL Y MÉTRICAS
   exportarExcel: (asin: string) =>
     fetchHerramienta(`/api/metricas/exportar-excel/${asin}`, {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
     }),
 
   // 🔴 EXPORTACIÓN DE RESUMEN EJECUTIVO PDF
   exportarPdf: (asin: string) =>
     fetchHerramienta(`/api/metricas/exportar-pdf/${asin}`, {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
     }),
 
   metricasResumen: (asin: string) => fetchHerramienta(`/api/metricas/resumen/${asin}`, { method: 'GET' }),
