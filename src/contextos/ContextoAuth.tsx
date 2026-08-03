@@ -60,7 +60,15 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
   };
 
   if (cargandoAuth) {
-    return <div>Cargando aplicación...</div>;
+    return <div className="min-h-screen flex flex-col items-center justify-center bg-[#121212] space-y-4 select-none">
+      {/* Spinner animado con los colores índigo de tu app */}
+      <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin shadow-lg shadow-indigo-900/20"></div>
+
+      {/* Texto con color neutral y efecto de parpadeo suave */}
+      <p className="text-neutral-400 font-medium text-sm animate-pulse">
+        Cargando aplicación...
+      </p>
+    </div>
   }
 
   return (
